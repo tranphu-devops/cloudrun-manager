@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "../lib/format";
+import { useT } from "../lib/i18n";
 
 export type View = "services" | "statistics" | "jobs" | "billing" | "recommendations";
 
@@ -27,11 +28,12 @@ export function NavRail({
   onChange: (v: View) => void;
   badges?: Partial<Record<View, ReactNode>>;
 }) {
+  const t = useT();
   return (
     <nav
       className="flex w-[92px] shrink-0 flex-col gap-1 border-r p-2"
       style={{ background: "var(--surface-1)" }}
-      aria-label="Điều hướng"
+      aria-label={t("Điều hướng")}
     >
       {ITEMS.map((it) => {
         const active = it.id === view;
@@ -51,7 +53,7 @@ export function NavRail({
             <span className="text-[17px] leading-none" aria-hidden>
               {it.icon}
             </span>
-            {it.label}
+            {t(it.label)}
             {badges?.[it.id] && <span className="absolute right-1 top-1">{badges[it.id]}</span>}
             {active && (
               <span

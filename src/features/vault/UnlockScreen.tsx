@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Button, ErrorBox, Input } from "../../components/ui";
+import { useT } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, VaultStatus } from "../../lib/types";
 
@@ -20,6 +21,7 @@ export function UnlockScreen({
   onUnlocked: (s: VaultStatus) => void;
   onUseGcloud: () => void;
 }) {
+  const t = useT();
   const [passphrase, setPassphrase] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<CmdError | null>(null);
@@ -49,16 +51,18 @@ export function UnlockScreen({
           <div className="text-2xl" aria-hidden>
             🔐
           </div>
-          <h1 className="mt-2 text-[16px] font-semibold">Mở khoá credential</h1>
+          <h1 className="mt-2 text-[16px] font-semibold">{t("Mở khoá credential")}</h1>
           <p className="mt-1 text-[12px] text-[var(--ink-muted)]">
-            Đã có {status.credentialCount} service account được lưu mã hoá trên máy này. Nhập passphrase
-            để dùng cho phiên làm việc.
+            {t(
+              "Đã có {count} service account được lưu mã hoá trên máy này. Nhập passphrase để dùng cho phiên làm việc.",
+              { count: status.credentialCount },
+            )}
           </p>
         </div>
 
         {status.active && (
           <div className="mb-3 rounded-md border p-2.5 text-[12px]" style={{ background: "var(--surface-2)" }}>
-            <div className="text-[var(--ink-muted)]">Service account đang chọn</div>
+            <div className="text-[var(--ink-muted)]">{t("Service account đang chọn")}</div>
             <div className="mono selectable mt-0.5 break-all">{status.active.clientEmail}</div>
           </div>
         )}
@@ -81,7 +85,7 @@ export function UnlockScreen({
           />
           <ErrorBox error={error} />
           <Button type="submit" variant="primary" loading={busy} disabled={!passphrase} className="w-full">
-            Mở khoá
+            {t("Mở khoá")}
           </Button>
         </form>
 
@@ -91,10 +95,10 @@ export function UnlockScreen({
             className="text-[12px] text-[var(--ink-secondary)] underline hover:text-[var(--ink-primary)]"
             onClick={onUseGcloud}
           >
-            Bỏ qua — dùng gcloud CLI như cũ
+            {t("Bỏ qua — dùng gcloud CLI như cũ")}
           </button>
           <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
-            App sẽ xác thực bằng tài khoản gcloud của máy, không đụng tới vault.
+            {t("App sẽ xác thực bằng tài khoản gcloud của máy, không đụng tới vault.")}
           </p>
         </div>
       </div>

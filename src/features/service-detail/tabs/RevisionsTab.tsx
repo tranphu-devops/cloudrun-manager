@@ -1,6 +1,7 @@
 import { Badge, ErrorBox, Loading, Notice } from "../../../components/ui";
 import { HealthDot } from "../../service-list/Sidebar";
 import { ago, dateTime, shortImage, shortSha } from "../../../lib/format";
+import { useT } from "../../../lib/i18n";
 import { useRevisions } from "../../../lib/queries";
 
 export function RevisionsTab({
@@ -12,21 +13,22 @@ export function RevisionsTab({
   region: string;
   service: string;
 }) {
+  const t = useT();
   const q = useRevisions(project, region, service);
 
   return (
     <div className="flex flex-col gap-3">
       <Notice tone="info" icon="ℹ">
-        Tab này chỉ để xem. App v1 không chuyển traffic và không rollback — hai thao tác đó ảnh hưởng
-        trực tiếp tới traffic đang chạy nên để trên GCP Console, nơi có sẵn xác nhận và audit của
-        Google.
+        {t(
+          "Tab này chỉ để xem. App không chuyển traffic và không rollback — hai thao tác đó ảnh hưởng trực tiếp tới traffic đang chạy nên để trên GCP Console, nơi có sẵn xác nhận và audit của Google.",
+        )}
       </Notice>
 
       <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
-      {q.isLoading && <Loading label="Đang lấy revision…" />}
+      {q.isLoading && <Loading label={t("Đang lấy revision…")} />}
 
       {q.data && q.data.length === 0 && (
-        <p className="text-[12px] text-[var(--ink-muted)]">Không có revision nào.</p>
+        <p className="text-[12px] text-[var(--ink-muted)]">{t("Không có revision nào.")}</p>
       )}
 
       {q.data && q.data.length > 0 && (
@@ -34,12 +36,12 @@ export function RevisionsTab({
           <table className="w-full text-[11px]">
             <thead style={{ background: "var(--surface-2)" }}>
               <tr className="text-left">
-                <th className="px-2 py-1.5 font-medium">Revision</th>
-                <th className="px-2 py-1.5 font-medium">Traffic</th>
-                <th className="px-2 py-1.5 font-medium">Tạo lúc</th>
-                <th className="px-2 py-1.5 font-medium">Image</th>
-                <th className="px-2 py-1.5 font-medium">Scaling</th>
-                <th className="px-2 py-1.5 font-medium">Resource</th>
+                <th className="px-2 py-1.5 font-medium">{t("Revision")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Traffic")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Tạo lúc")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Image")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Scaling")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Resource")}</th>
               </tr>
             </thead>
             <tbody>

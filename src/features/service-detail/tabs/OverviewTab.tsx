@@ -3,10 +3,12 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { Badge, Button, Card, KeyValue, Notice } from "../../../components/ui";
 import { StatTile } from "../../../components/charts";
 import { compact, dateTime, humanTimeout, percent, regionLabel, shortImage } from "../../../lib/format";
+import { useT } from "../../../lib/i18n";
 import { consoleServiceUrl } from "../../../lib/ipc";
 import type { ProjectLoadSnapshot, ServiceDetail } from "../../../lib/types";
 import { HealthDot } from "../../service-list/Sidebar";
 
+/** Giá trị là key dịch, không phải chuỗi hiển thị — bọc `t()` ở chỗ render. */
 const INGRESS_TEXT: Record<string, string> = {
   INGRESS_TRAFFIC_ALL: "Public — ai cũng gọi được (all)",
   INGRESS_TRAFFIC_INTERNAL_ONLY: "Chỉ nội bộ VPC / Cloud Run khác",
@@ -24,6 +26,7 @@ export function OverviewTab({
   load: ProjectLoadSnapshot | undefined;
   containerIndex: number;
 }) {
+  const t = useT();
   const s = detail.summary;
   const c = detail.containers[containerIndex];
 
@@ -37,16 +40,18 @@ export function OverviewTab({
     <div className="flex flex-col gap-3">
       {s.health === "notReady" && (
         <Notice tone="critical" icon="✕">
-          Service đang ở trạng thái không ready.
-          {s.healthMessage ? ` Cloud Run báo: ${s.healthMessage}` : ""}
-          {"\n"}Xem tab Logs và Revisions để tìm nguyên nhân.
+          {t("Service đang ở trạng thái không ready.")}
+          {s.healthMessage ? ` ${t("Cloud Run báo:")} ${s.healthMessage}` : ""}
+          {"\n"}
+          {t("Xem tab Logs và Revisions để tìm nguyên nhân.")}
         </Notice>
       )}
 
       {s.trafficPinned && (
         <Notice tone="warning" icon="📌">
-          Traffic đang được ghim vào revision cụ thể thay vì LATEST. Mọi revision mới tạo ra (kể cả khi
-          bạn sửa env) sẽ không nhận traffic cho tới khi traffic được chuyển sang.
+          {t(
+            "Traffic đang được ghim vào revision cụ thể thay vì LATEST. Mọi revision mới tạo ra (kể cả khi bạn sửa env) sẽ không nhận traffic cho tới khi traffic được chuyển sang.",
+          )}
         </Notice>
       )}
 
@@ -54,25 +59,36 @@ export function OverviewTab({
           nên đứng đầu dưới dạng tile, chart diễn biến để ở tab Metrics. */}
       <div className="grid grid-cols-5 gap-2">
         <StatTile
-          label="Instance đang chạy"
+          label={t("Instance đang chạy")}
           value={inst === undefined ? "–" : compact(inst)}
           sub={
             s.minInstances !== null || s.maxInstances !== null
-              ? `scaling ${s.minInstances ?? 0}–${s.maxInstances ?? "∞"}`
-              : "scaling mặc định"
+              ? t("scaling {min}–{max}", {
+                  min: s.minInstances ?? 0,
+                  max: s.maxInstances ?? "∞",
+                })
+              : t("scaling mặc định")
           }
         />
-        <StatTile label="Request / giây" value={rps === undefined ? "–" : compact(rps)} sub="30 phút gần nhất" />
         <StatTile
-          label="Tỉ lệ 5xx"
+          label={t("Request / giây")}
+          value={rps === undefined ? "–" : compact(rps)}
+          sub={t("30 phút gần nhất")}
+        />
+        <StatTile
+          label={t("Tỉ lệ 5xx")}
           value={err === undefined ? "–" : percent(err, 2)}
           tone={errTone}
           icon={errTone === "good" ? "✓" : "⚠"}
-          sub="30 phút gần nhất"
+          sub={t("30 phút gần nhất")}
         />
-        <StatTile label="Concurrency" value={detail.concurrency ?? "–"} sub="request / instance" />
         <StatTile
-          label="Timeout"
+          label={t("Concurrency")}
+          value={detail.concurrency ?? "–"}
+          sub={t("request / instance")}
+        />
+        <StatTile
+          label={t("Timeout")}
           value={humanTimeout(detail.timeout)}
           sub={c?.cpu && c?.memory ? `${c.cpu} vCPU · ${c.memory}` : undefined}
         />
@@ -80,12 +96,12 @@ export function OverviewTab({
 
       <div className="grid grid-cols-2 gap-3">
         <Card
-          title="Service"
+          title={t("Service")}
           actions={
             <div className="flex items-center gap-1.5">
               {s.uri && (
                 <Button size="sm" variant="ghost" onClick={() => void openUrl(s.uri as string)}>
-                  Mở URL ↗
+                  {t("Mở URL ↗")}
                 </Button>
               )}
               <Button
@@ -101,42 +117,47 @@ export function OverviewTab({
           <KeyValue
             items={[
               [
-                "Trạng thái",
+                t("Trạng thái"),
                 <span className="flex items-center gap-1.5">
                   <HealthDot health={s.health} message={s.healthMessage} />
                   {s.health === "ready"
-                    ? "Ready"
+                    ? t("Ready")
                     : s.health === "reconciling"
-                      ? "Đang triển khai"
+                      ? t("Đang triển khai")
                       : s.health === "notReady"
-                        ? "Không ready"
-                        : "Không rõ"}
+                        ? t("Không ready")
+                        : t("Không rõ")}
                 </span>,
               ],
               ["URL", s.uri ? <span className="mono break-all">{s.uri}</span> : "–"],
-              ["Region", regionLabel(s.region)],
+              [t("Region"), regionLabel(s.region)],
               [
-                "Revision đang chạy",
+                t("Revision đang chạy"),
                 <span className="mono">{s.latestReadyRevision ?? "–"}</span>,
               ],
               [
-                "Image",
+                t("Image"),
                 <span className="mono break-all" title={c?.image ?? undefined}>
                   {shortImage(c?.image ?? null)}
                 </span>,
               ],
               [
-                "Service account",
-                <span className="mono break-all">{detail.serviceAccount ?? "(mặc định Compute)"}</span>,
+                t("Service account"),
+                <span className="mono break-all">
+                  {detail.serviceAccount ?? t("(mặc định Compute)")}
+                </span>,
               ],
               [
-                "Ingress",
+                t("Ingress"),
                 detail.ingress
-                  ? (INGRESS_TEXT[detail.ingress] ?? detail.ingress)
+                  ? t(INGRESS_TEXT[detail.ingress] ?? detail.ingress)
                   : "–",
               ],
-              ["Port container", c?.port ?? "–"],
-              ["Sửa lần cuối", `${dateTime(s.updateTime)}${s.lastModifier ? ` · ${s.lastModifier}` : ""}`],
+              [t("Port container"), c?.port ?? "–"],
+              [
+                t("Sửa lần cuối"),
+                `${dateTime(s.updateTime)}${s.lastModifier ? ` · ${s.lastModifier}` : ""}`,
+              ],
             ]}
           />
         </Card>
@@ -145,13 +166,14 @@ export function OverviewTab({
           <Card title="Traffic">
             {detail.traffic.length === 0 ? (
               <p className="text-[12px] text-[var(--ink-muted)]">
-                Không khai báo traffic — 100% về revision mới nhất (mặc định của Cloud Run).
+                {t("Không khai báo traffic — 100% về revision mới nhất (mặc định của Cloud Run).")}
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
-                {detail.traffic.map((t, i) => (
+                {/* Tên `tr`, không phải `t` — `t` đã là hàm dịch trong scope này. */}
+                {detail.traffic.map((tr, i) => (
                   <li key={i} className="flex items-center gap-2 text-[12px]">
-                    <span className="tnum w-10 shrink-0 text-right font-semibold">{t.percent}%</span>
+                    <span className="tnum w-10 shrink-0 text-right font-semibold">{tr.percent}%</span>
                     {/* Track có bề rộng cố định: thanh 100% mà cho co giãn theo flex sẽ
                         đẩy tên revision ra khỏi khung. */}
                     <span
@@ -161,28 +183,28 @@ export function OverviewTab({
                       <span
                         className="block h-full rounded-sm"
                         style={{
-                          width: `${Math.max(t.percent, 2)}%`,
-                          background: t.kind === "LATEST" ? "var(--series-1)" : "var(--series-2)",
+                          width: `${Math.max(tr.percent, 2)}%`,
+                          background: tr.kind === "LATEST" ? "var(--series-1)" : "var(--series-2)",
                         }}
                       />
                     </span>
-                    <span className="mono min-w-0 flex-1 truncate" title={t.revision ?? "LATEST"}>
-                      {t.kind === "LATEST" ? "LATEST" : (t.revision ?? "?")}
+                    <span className="mono min-w-0 flex-1 truncate" title={tr.revision ?? "LATEST"}>
+                      {tr.kind === "LATEST" ? "LATEST" : (tr.revision ?? "?")}
                     </span>
-                    {t.tag && <Badge tone="info">tag {t.tag}</Badge>}
+                    {tr.tag && <Badge tone="info">tag {tr.tag}</Badge>}
                   </li>
                 ))}
               </ul>
             )}
           </Card>
 
-          <Card title="Mạng & tích hợp">
+          <Card title={t("Mạng & tích hợp")}>
             <KeyValue
               items={[
-                ["VPC connector", detail.vpcConnector ?? "–"],
-                ["VPC egress", detail.vpcEgress ?? "–"],
+                [t("VPC connector"), detail.vpcConnector ?? "–"],
+                [t("VPC egress"), detail.vpcEgress ?? "–"],
                 [
-                  "Cloud SQL",
+                  t("Cloud SQL"),
                   detail.cloudsqlInstances.length > 0 ? (
                     <ul className="mono flex flex-col">
                       {detail.cloudsqlInstances.map((x) => (
@@ -195,9 +217,16 @@ export function OverviewTab({
                     "–"
                   ),
                 ],
-                ["Execution environment", detail.executionEnvironment ?? "–"],
-                ["Launch stage", detail.launchStage ?? "–"],
-                ["Session affinity", detail.sessionAffinity === null ? "–" : detail.sessionAffinity ? "bật" : "tắt"],
+                [t("Execution environment"), detail.executionEnvironment ?? "–"],
+                [t("Launch stage"), detail.launchStage ?? "–"],
+                [
+                  t("Session affinity"),
+                  detail.sessionAffinity === null
+                    ? "–"
+                    : detail.sessionAffinity
+                      ? t("bật")
+                      : t("tắt"),
+                ],
               ]}
             />
           </Card>
@@ -205,7 +234,7 @@ export function OverviewTab({
       </div>
 
       {detail.conditions.length > 0 && (
-        <Card title="Condition từ Cloud Run">
+        <Card title={t("Condition từ Cloud Run")}>
           <ul className="flex flex-col gap-1">
             {detail.conditions.map((c2, i) => {
               const ok = c2.state === "CONDITION_SUCCEEDED";

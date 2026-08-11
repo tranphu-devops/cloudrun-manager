@@ -16,6 +16,7 @@ import type {
   CmdError,
   EnvEntry,
   EnvLabel,
+  Language,
   LogPage,
   MetricCheck,
   ProjectInfo,
@@ -72,6 +73,7 @@ export const api = {
     logPollSeconds?: number;
     revealTimeoutSeconds?: number;
     metricsWindowMinutes?: number;
+    language?: Language;
   }) => call<Settings>("set_preferences", p),
   checkPermissions: (project: string) =>
     call<CapabilitiesResult>("check_permissions", { project }),

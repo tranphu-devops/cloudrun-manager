@@ -12,6 +12,8 @@
 export type Health = "ready" | "notReady" | "reconciling" | "unknown";
 export type EnvKind = "plain" | "secretRef";
 export type EnvLabel = "dev" | "staging" | "prod" | "unknown";
+/** Ngôn ngữ UI. Chỉ ảnh hưởng tầng React — message lỗi từ Rust vẫn là tiếng Việt. */
+export type Language = "en" | "vi";
 export type TokenSource = "serviceAccount" | "gcloudCli" | "adc";
 
 export interface AuthInfo {
@@ -262,6 +264,7 @@ export interface Settings {
   /** Project app được phép thao tác. Chặn ở tầng Rust, không chỉ ẩn dropdown. */
   allowedProjects: string[];
   projectLock: boolean;
+  language: Language;
   projectLabels: Record<string, EnvLabel>;
   recentProjects: string[];
   currentProject: string | null;

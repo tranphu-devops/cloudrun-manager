@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn, regionLabel } from "../lib/format";
+import { useT } from "../lib/i18n";
 import type { ServiceSummary } from "../lib/types";
 import { HealthDot } from "../features/service-list/Sidebar";
 
 /**
  * Nhảy nhanh tới service bằng Ctrl+K.
  *
- * Với ~95 service trong `example-project`, cuộn sidebar là cách chậm nhất để tới đúng
- * service. Fuzzy match ở đây cố tình đơn giản (khớp thứ tự ký tự) — đủ để `atsy` tìm ra
- * `attendance-sync` mà không cần thư viện nào.
+ * Với project cỡ trăm service, cuộn sidebar là cách chậm nhất để tới đúng service. Fuzzy
+ * match ở đây cố tình đơn giản (khớp thứ tự ký tự) — đủ để `atsy` tìm ra `attendance-sync`
+ * mà không cần thư viện nào.
  */
 function fuzzyScore(needle: string, hay: string): number | null {
   if (!needle) return 0;
@@ -45,6 +46,7 @@ export function CommandPalette({
   services: ServiceSummary[];
   onPick: (s: ServiceSummary) => void;
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +102,7 @@ export function CommandPalette({
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Nhảy tới service… (Enter để mở, Esc để đóng)"
+          placeholder={t("Nhảy tới service… (Enter để mở, Esc để đóng)")}
           className="w-full border-b bg-transparent px-3 py-2.5 text-[14px] outline-none"
           onKeyDown={(e) => {
             if (e.key === "Escape") {
@@ -125,7 +127,7 @@ export function CommandPalette({
         <ul ref={listRef} className="max-h-[420px] overflow-y-auto">
           {results.length === 0 && (
             <li className="px-3 py-4 text-center text-[12px] text-[var(--ink-muted)]">
-              Không có service nào khớp “{query}”.
+              {t("Không có service nào khớp “{query}”.", { query })}
             </li>
           )}
           {results.map((s, i) => (

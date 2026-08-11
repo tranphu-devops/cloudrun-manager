@@ -2,14 +2,16 @@ import { useMemo, useState } from "react";
 
 import { Badge, ErrorBox, Input, Loading } from "../../components/ui";
 import { cn, compact, percent, regionLabel } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 import type { CmdError, Health, ProjectLoadSnapshot, ServiceSummary } from "../../lib/types";
 
 export function HealthDot({ health, message }: { health: Health; message?: string | null }) {
+  const t = useT();
   const map: Record<Health, { color: string; icon: string; text: string }> = {
-    ready: { color: "var(--status-good)", icon: "●", text: "Ready" },
-    notReady: { color: "var(--status-critical)", icon: "✕", text: "Không ready" },
-    reconciling: { color: "var(--status-warning)", icon: "◐", text: "Đang triển khai" },
-    unknown: { color: "var(--ink-muted)", icon: "○", text: "Không rõ" },
+    ready: { color: "var(--status-good)", icon: "●", text: t("Ready") },
+    notReady: { color: "var(--status-critical)", icon: "✕", text: t("Không ready") },
+    reconciling: { color: "var(--status-warning)", icon: "◐", text: t("Đang triển khai") },
+    unknown: { color: "var(--ink-muted)", icon: "○", text: t("Không rõ") },
   };
   const m = map[health];
   return (
@@ -43,6 +45,7 @@ export function Sidebar({
   selected: { region: string; name: string } | null;
   onSelect: (s: ServiceSummary) => void;
 }) {
+  const t = useT();
   const [filter, setFilter] = useState("");
   const [onlyProblems, setOnlyProblems] = useState(false);
 
@@ -82,8 +85,8 @@ export function Sidebar({
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder={`Tìm trong ${services.length} service…`}
-          aria-label="Tìm service"
+          placeholder={t("Tìm trong {count} service…", { count: services.length })}
+          aria-label={t("Tìm service")}
         />
         <label className="flex items-center gap-1.5 text-[11px] text-[var(--ink-secondary)]">
           <input
@@ -91,7 +94,7 @@ export function Sidebar({
             checked={onlyProblems}
             onChange={(e) => setOnlyProblems(e.target.checked)}
           />
-          Chỉ hiện service cần để ý
+          {t("Chỉ hiện service cần để ý")}
           {problemCount > 0 && (
             <span className="tnum" style={{ color: "var(--status-warning)" }}>
               ({problemCount})
@@ -101,14 +104,14 @@ export function Sidebar({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {loading && services.length === 0 && <Loading label="Đang lấy danh sách service…" />}
+        {loading && services.length === 0 && <Loading label={t("Đang lấy danh sách service…")} />}
         {error && (
           <div className="p-2">
             <ErrorBox error={error} />
           </div>
         )}
         {!loading && services.length > 0 && groups.length === 0 && (
-          <p className="p-3 text-[12px] text-[var(--ink-muted)]">Không có service nào khớp.</p>
+          <p className="p-3 text-[12px] text-[var(--ink-muted)]">{t("Không có service nào khớp.")}</p>
         )}
 
         {groups.map(([region, items]) => (
@@ -148,7 +151,9 @@ export function Sidebar({
                         <span className="min-w-0 flex-1 truncate text-[12px]">{s.name}</span>
                         {s.trafficPinned && (
                           <span
-                            title="Traffic bị ghim vào revision cụ thể — revision mới sẽ không nhận traffic"
+                            title={t(
+                              "Traffic bị ghim vào revision cụ thể — revision mới sẽ không nhận traffic",
+                            )}
                             className="shrink-0 text-[10px]"
                             style={{ color: "var(--status-warning)" }}
                           >
@@ -158,7 +163,9 @@ export function Sidebar({
                         {s.secretEnvCount > 0 && (
                           <span
                             className="shrink-0 text-[10px] opacity-60"
-                            title={`${s.secretEnvCount} biến lấy từ Secret Manager`}
+                            title={t("{count} biến lấy từ Secret Manager", {
+                              count: s.secretEnvCount,
+                            })}
                           >
                             🔑
                           </span>
@@ -168,19 +175,19 @@ export function Sidebar({
                       <span className="tnum flex items-center gap-2 pl-[15px] text-[10px] text-[var(--ink-muted)]">
                         {/* `undefined` = chưa có dữ liệu metric. Hiện "–" thay vì 0 để
                             không ai đọc thành "service không chạy instance nào". */}
-                        <span title="Số instance">
+                        <span title={t("Số instance")}>
                           {inst === undefined ? "– inst" : `${compact(inst)} inst`}
                         </span>
-                        <span title="Request mỗi giây">
+                        <span title={t("Request mỗi giây")}>
                           {rps === undefined ? "– rps" : `${compact(rps)} rps`}
                         </span>
                         {err >= ERR_WARN && (
                           <Badge
                             tone={err >= ERR_CRIT ? "critical" : "warning"}
                             icon="⚠"
-                            title="Tỉ lệ response 5xx trong 30 phút gần nhất"
+                            title={t("Tỉ lệ response 5xx trong 30 phút gần nhất")}
                           >
-                            {percent(err, 1)} lỗi
+                            {t("{pct} lỗi", { pct: percent(err, 1) })}
                           </Badge>
                         )}
                       </span>
@@ -195,7 +202,9 @@ export function Sidebar({
 
       {load && load.missing.length > 0 && (
         <div className="border-t px-2 py-1.5 text-[10px] text-[var(--ink-muted)]">
-          Không lấy được: {load.missing.join(", ")} — badge tương ứng hiện “–”.
+          {t("Không lấy được: {list} — badge tương ứng hiện “–”.", {
+            list: load.missing.join(", "),
+          })}
         </div>
       )}
     </aside>

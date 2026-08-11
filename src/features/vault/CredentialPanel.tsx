@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Badge, Button, ErrorBox, Field, Input, Loading, Notice } from "../../components/ui";
+import { useT } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, ImportResult, VaultStatus } from "../../lib/types";
 
@@ -15,6 +16,7 @@ import type { CmdError, ImportResult, VaultStatus } from "../../lib/types";
  *  - Backend không bao giờ trả private key ra — chỉ trả email + key id để hiển thị.
  */
 
+/** Giá trị là key dịch — bọc `t()` ở chỗ render. */
 const SOURCE_TEXT: Record<VaultStatus["effectiveSource"], string> = {
   serviceAccount: "Service Account (từ vault)",
   gcloudCli: "gcloud CLI (tài khoản máy)",
@@ -28,6 +30,7 @@ export function CredentialPanel({
   allowedProjects: string[];
   onVaultChanged?: (s: VaultStatus) => void;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [keyJson, setKeyJson] = useState("");
@@ -63,7 +66,7 @@ export function CredentialPanel({
     };
     reader.onerror = () =>
       setError({
-        message: "Không đọc được file. Chọn lại file JSON service account.",
+        message: t("Không đọc được file. Chọn lại file JSON service account."),
         detail: null,
         kind: "invalid",
         status: null,
@@ -117,7 +120,7 @@ export function CredentialPanel({
     }
   };
 
-  if (statusQ.isLoading) return <Loading label="Đang kiểm tra vault…" />;
+  if (statusQ.isLoading) return <Loading label={t("Đang kiểm tra vault…")} />;
 
   const importable = keyJson.trim().length > 0 && passphrase.length > 0 && !busy;
 
@@ -128,13 +131,13 @@ export function CredentialPanel({
       {/* Trạng thái hiện tại */}
       <div className="rounded-md border p-3" style={{ background: "var(--surface-2)" }}>
         <div className="flex flex-wrap items-center gap-2 text-[12px]">
-          <span className="text-[var(--ink-muted)]">Đang xác thực bằng:</span>
+          <span className="text-[var(--ink-muted)]">{t("Đang xác thực bằng:")}</span>
           <Badge tone={status?.effectiveSource === "serviceAccount" ? "info" : "neutral"}>
-            {status ? SOURCE_TEXT[status.effectiveSource] : "–"}
+            {status ? t(SOURCE_TEXT[status.effectiveSource]) : "–"}
           </Badge>
           {status?.exists && (
             <Badge tone={status.unlocked ? "good" : "warning"} icon={status.unlocked ? "🔓" : "🔒"}>
-              {status.unlocked ? "đã mở khoá" : "đang khoá"}
+              {status.unlocked ? t("đã mở khoá") : t("đang khoá")}
             </Badge>
           )}
         </div>
@@ -144,7 +147,7 @@ export function CredentialPanel({
         {status?.exists && status.unlocked && (
           <div className="mt-2">
             <Button size="sm" variant="ghost" onClick={() => void lock()} disabled={busy}>
-              🔒 Khoá lại
+              {t("🔒 Khoá lại")}
             </Button>
           </div>
         )}
@@ -153,7 +156,9 @@ export function CredentialPanel({
       {/* Danh sách credential đã lưu — chỉ khi đã mở khoá */}
       {status?.unlocked && status.credentialCount > 0 && (
         <div>
-          <h4 className="mb-1.5 text-[12px] font-semibold">Credential đã lưu ({status.credentialCount})</h4>
+          <h4 className="mb-1.5 text-[12px] font-semibold">
+            {t("Credential đã lưu ({count})", { count: status.credentialCount })}
+          </h4>
           <div className="flex flex-col gap-1.5">
             {Array.from({ length: status.credentialCount }).map((_, i) => {
               const isActive = status.active && i === activeIndexGuess(status, i);
@@ -162,15 +167,15 @@ export function CredentialPanel({
                   <span className="mono flex-1 truncate">
                     {isActive ? status.active?.clientEmail : `Credential #${i + 1}`}
                   </span>
-                  {isActive && <Badge tone="good">đang dùng</Badge>}
+                  {isActive && <Badge tone="good">{t("đang dùng")}</Badge>}
                   <Button
                     size="sm"
                     variant="ghost"
                     disabled={busy}
                     onClick={() => void removeAt(i)}
-                    title="Xoá credential này khỏi vault"
+                    title={t("Xoá credential này khỏi vault")}
                   >
-                    Xoá
+                    {t("Xoá")}
                   </Button>
                 </div>
               );
@@ -183,11 +188,16 @@ export function CredentialPanel({
       {result && (
         <Notice tone={result.tokenOk ? "good" : "warning"} icon={result.tokenOk ? "✓" : "⚠"}>
           {result.tokenOk
-            ? `Đã lấy được token với ${result.credential.clientEmail}.`
-            : `Đã lưu ${result.credential.clientEmail} nhưng chưa lấy được token — kiểm tra lại SA hoặc đồng hồ máy.`}
+            ? t("Đã lấy được token với {email}.", { email: result.credential.clientEmail })
+            : t(
+                "Đã lưu {email} nhưng chưa lấy được token — kiểm tra lại SA hoặc đồng hồ máy.",
+                { email: result.credential.clientEmail },
+              )}
           {result.missing.length > 0 && (
             <>
-              {"\n\n"}Thiếu quyền trên project cần dùng:{"\n"}
+              {"\n\n"}
+              {t("Thiếu quyền trên project cần dùng:")}
+              {"\n"}
               {result.missing.map((m) => `• ${m}`).join("\n")}
             </>
           )}
@@ -203,15 +213,17 @@ export function CredentialPanel({
       {/* Import SA mới */}
       <div className="rounded-md border p-3">
         <h4 className="mb-2 text-[12px] font-semibold">
-          {status?.exists ? "Thêm service account" : "Nhập service account (tạo vault)"}
+          {status?.exists ? t("Thêm service account") : t("Nhập service account (tạo vault)")}
         </h4>
         <p className="mb-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-          Chọn file JSON key của service account. File được đọc ngay trong app, key riêng được mã hoá
-          bằng passphrase rồi lưu trên máy — không gửi đi đâu, không nằm trong settings hay log.
+          {t(
+            "Chọn file JSON key của service account. File được đọc ngay trong app, key riêng được mã hoá bằng passphrase rồi lưu trên máy — không gửi đi đâu, không nằm trong settings hay log.",
+          )}
           {allowedProjects.length > 0 && (
             <>
               {" "}
-              App sẽ kiểm quyền của SA trên <span className="mono">{allowedProjects.join(", ")}</span>.
+              {t("App sẽ kiểm quyền của SA trên")}{" "}
+              <span className="mono">{allowedProjects.join(", ")}</span>.
             </>
           )}
         </p>
@@ -229,13 +241,20 @@ export function CredentialPanel({
           />
           {fileName && (
             <span className="text-[11px] text-[var(--ink-muted)]">
-              Đã nạp <span className="mono">{fileName}</span> ({(keyJson.length / 1024).toFixed(1)} KB)
+              {t("Đã nạp")} <span className="mono">{fileName}</span> (
+              {(keyJson.length / 1024).toFixed(1)} KB)
             </span>
           )}
 
           <Field
-            label={status?.exists ? "Passphrase (đúng passphrase của vault)" : "Đặt passphrase cho vault"}
-            hint="Không lưu ở đâu cả — quên là phải nhập lại từng SA. Đặt passphrase đủ mạnh."
+            label={
+              status?.exists
+                ? t("Passphrase (đúng passphrase của vault)")
+                : t("Đặt passphrase cho vault")
+            }
+            hint={t(
+              "Không lưu ở đâu cả — quên là phải nhập lại từng SA. Đặt passphrase đủ mạnh.",
+            )}
           >
             <Input
               type="password"
@@ -248,7 +267,7 @@ export function CredentialPanel({
 
           <div>
             <Button variant="primary" loading={busy} disabled={!importable} onClick={() => void doImport()}>
-              {status?.exists ? "Thêm vào vault" : "Tạo vault & nhập SA"}
+              {status?.exists ? t("Thêm vào vault") : t("Tạo vault & nhập SA")}
             </Button>
           </div>
         </div>

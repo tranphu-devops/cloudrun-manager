@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { StatTile } from "../../components/charts";
 import { Badge, Button, EmptyState, ErrorBox, Input, Loading, Notice, Select, useToast } from "../../components/ui";
+import { useT } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, MarkAction, Recommendation, RecommendationsResult } from "../../lib/types";
 
@@ -49,6 +50,7 @@ export function RecommendationsPage({
   project: string;
   readOnly: boolean;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
   const [filter, setFilter] = useState("");
@@ -97,21 +99,23 @@ export function RecommendationsPage({
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["recommendations", project] });
 
-  if (q.isLoading) return <Loading label="Đang lấy recommendation từ các Recommender…" />;
+  if (q.isLoading) return <Loading label={t("Đang lấy recommendation từ các Recommender…")} />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
 
       <Notice tone="info" icon="ℹ">
-        App chỉ <strong>đọc</strong> gợi ý và <strong>đánh dấu trạng thái</strong>. Áp dụng thật (đổi
-        scaling, sửa IAM…) không làm ở đây — mở tài nguyên tương ứng trên Console để thao tác có kiểm
-        soát.
+        {t(
+          "App chỉ đọc gợi ý và đánh dấu trạng thái. Áp dụng thật (đổi scaling, sửa IAM…) không làm ở đây — mở tài nguyên tương ứng trên Console để thao tác có kiểm soát.",
+        )}
       </Notice>
 
       {q.data?.apiDisabled && (
         <Notice tone="warning" icon="⚠">
-          Recommender API chưa được bật trên project này nên danh sách có thể thiếu. Bật tại{" "}
+          {t(
+            "Recommender API chưa được bật trên project này nên danh sách có thể thiếu. Bật tại",
+          )}{" "}
           <a
             className="underline"
             href={`https://console.cloud.google.com/apis/library/recommender.googleapis.com?project=${encodeURIComponent(project)}`}
@@ -126,26 +130,32 @@ export function RecommendationsPage({
 
       {q.data && q.data.errors.length > 0 && (
         <Notice tone="warning" icon="⚠">
-          Một số recommender không lấy được:{"\n"}
+          {t("Một số recommender không lấy được:")}
+          {"\n"}
           {q.data.errors.map((e) => `• ${e}`).join("\n")}
         </Notice>
       )}
 
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <StatTile label="Tổng gợi ý" value={stats.total} />
-        <StatTile label="Về chi phí" value={stats.cost} tone={stats.cost > 0 ? "good" : "neutral"} icon="₫" />
+        <StatTile label={t("Tổng gợi ý")} value={stats.total} />
         <StatTile
-          label="Về bảo mật"
+          label={t("Về chi phí")}
+          value={stats.cost}
+          tone={stats.cost > 0 ? "good" : "neutral"}
+          icon="₫"
+        />
+        <StatTile
+          label={t("Về bảo mật")}
           value={stats.security}
           tone={stats.security > 0 ? "critical" : "good"}
           icon={stats.security > 0 ? "⚠" : "✓"}
         />
         <StatTile
-          label="Tiết kiệm được ≈"
+          label={t("Tiết kiệm được ≈")}
           value={USD.format(stats.saving)}
           tone="good"
           icon="≈"
-          sub="mỗi tháng, theo GCP"
+          sub={t("mỗi tháng, theo GCP")}
         />
       </div>
 
@@ -153,19 +163,19 @@ export function RecommendationsPage({
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="tìm theo mô tả, tài nguyên…"
+          placeholder={t("tìm theo mô tả, tài nguyên…")}
           className="w-72"
         />
         <Select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="all">Tất cả nhóm</option>
-          <option value="COST">Chi phí</option>
-          <option value="SECURITY">Bảo mật</option>
-          <option value="PERFORMANCE">Hiệu năng</option>
-          <option value="RELIABILITY">Độ tin cậy</option>
-          <option value="MANAGEABILITY">Vận hành</option>
+          <option value="all">{t("Tất cả nhóm")}</option>
+          <option value="COST">{t("Chi phí")}</option>
+          <option value="SECURITY">{t("Bảo mật")}</option>
+          <option value="PERFORMANCE">{t("Hiệu năng")}</option>
+          <option value="RELIABILITY">{t("Độ tin cậy")}</option>
+          <option value="MANAGEABILITY">{t("Vận hành")}</option>
         </Select>
         <span className="text-[11px] text-[var(--ink-muted)]">
-          {rows.length}/{stats.total} gợi ý
+          {t("{shown}/{total} gợi ý", { shown: rows.length, total: stats.total })}
         </span>
         <Button size="sm" variant="ghost" className="ml-auto" loading={q.isFetching} onClick={() => void q.refetch()}>
           ⟳ Reload
@@ -175,8 +185,10 @@ export function RecommendationsPage({
       {rows.length === 0 ? (
         <EmptyState
           icon="✓"
-          title="Không có gợi ý nào"
-          hint="Hoặc project đang tối ưu tốt, hoặc Recommender chưa đủ dữ liệu (cần vài ngày quan sát)."
+          title={t("Không có gợi ý nào")}
+          hint={t(
+            "Hoặc project đang tối ưu tốt, hoặc Recommender chưa đủ dữ liệu (cần vài ngày quan sát).",
+          )}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -202,6 +214,7 @@ function RecCard({
   onDone: () => void;
   toast: (t: { tone: "good" | "critical" | "warning" | "info"; title: string; body?: string }) => void;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<CmdError | null>(null);
 
@@ -227,19 +240,23 @@ function RecCard({
   return (
     <div className="rounded-lg border p-3" style={{ background: "var(--surface-1)" }}>
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
-        <Badge tone={CATEGORY_TONE[rec.category] ?? "neutral"}>{CATEGORY_VI[rec.category] ?? rec.category}</Badge>
-        <Badge tone={prio.tone}>{prio.text}</Badge>
+        <Badge tone={CATEGORY_TONE[rec.category] ?? "neutral"}>
+          {t(CATEGORY_VI[rec.category] ?? rec.category)}
+        </Badge>
+        <Badge tone={prio.tone}>{t(prio.text)}</Badge>
         {saving !== null && (
           <Badge tone="good" icon="↓">
-            tiết kiệm ≈ {USD.format(saving)}/tháng
+            {t("tiết kiệm ≈ {amount}/tháng", { amount: USD.format(saving) })}
           </Badge>
         )}
         {extra !== null && (
           <Badge tone="warning" icon="↑">
-            tăng ≈ {USD.format(extra)}/tháng
+            {t("tăng ≈ {amount}/tháng", { amount: USD.format(extra) })}
           </Badge>
         )}
-        {alreadyMarked && <Badge tone="neutral">đã đánh dấu: {rec.state}</Badge>}
+        {alreadyMarked && (
+          <Badge tone="neutral">{t("đã đánh dấu: {state}", { state: rec.state })}</Badge>
+        )}
         <span className="ml-auto text-[10px] text-[var(--ink-muted)]">{rec.location}</span>
       </div>
 
@@ -247,7 +264,7 @@ function RecCard({
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--ink-muted)]">
         {rec.targetResource && (
-          <span className="mono selectable" title="Tài nguyên bị ảnh hưởng">
+          <span className="mono selectable" title={t("Tài nguyên bị ảnh hưởng")}>
             🎯 {rec.targetResource}
           </span>
         )}
@@ -263,7 +280,7 @@ function RecCard({
       <div className="mt-2 flex items-center gap-2">
         {readOnly && (
           <span className="text-[11px] text-[var(--ink-muted)]">
-            Chế độ chỉ đọc — bật “Cho ghi” để đánh dấu trạng thái.
+            {t("Chế độ chỉ đọc — bật “Cho ghi” để đánh dấu trạng thái.")}
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
@@ -271,20 +288,22 @@ function RecCard({
             size="sm"
             variant="ghost"
             disabled={readOnly || busy}
-            title="Đánh dấu đã nhận xử lý (claimed) — chỉ đổi trạng thái, không áp dụng gì"
-            onClick={() => void mark("claimed", `Đã đánh dấu nhận xử lý`)}
+            title={t(
+              "Đánh dấu đã nhận xử lý (claimed) — chỉ đổi trạng thái, không áp dụng gì",
+            )}
+            onClick={() => void mark("claimed", t("Đã đánh dấu nhận xử lý"))}
           >
-            Nhận xử lý
+            {t("Nhận xử lý")}
           </Button>
           <Button
             size="sm"
             variant="secondary"
             disabled={readOnly || busy}
             loading={busy}
-            title="Bỏ qua gợi ý này — lần sau không hiện lại"
-            onClick={() => void mark("dismissed", `Đã bỏ qua gợi ý`)}
+            title={t("Bỏ qua gợi ý này — lần sau không hiện lại")}
+            onClick={() => void mark("dismissed", t("Đã bỏ qua gợi ý"))}
           >
-            Bỏ qua
+            {t("Bỏ qua")}
           </Button>
         </div>
       </div>

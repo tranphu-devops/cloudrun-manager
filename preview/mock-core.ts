@@ -286,6 +286,8 @@ const settings = {
   readOnly: true,
   allowedProjects: ["example-project"],
   projectLock: true,
+  // Cùng mặc định với `Settings::default()` bên Rust.
+  language: "en" as "en" | "vi",
   projectLabels: { "example-prod": "prod", "example-staging": "staging" } as Record<string, string>,
   recentProjects: ["example-project"],
   currentProject: "example-project",
@@ -328,7 +330,11 @@ const HANDLERS: Record<string, (a: Record<string, unknown>) => unknown> = {
     settings.projectLabels[String(a["project"])] = String(a["label"]);
     return settings;
   },
-  set_preferences: () => settings,
+  set_preferences: (a) => {
+    // Chỉ `language` cần phản hồi thật: đây là cách duy nhất đổi ngôn ngữ trong preview.
+    if (a["language"] === "en" || a["language"] === "vi") settings.language = a["language"];
+    return settings;
+  },
   clear_cache: () => null,
   audit_path: () => "C:\\Users\\you\\AppData\\Roaming\\dev.cloudrun.cockpit\\audit.jsonl",
   audit_tail: () => [

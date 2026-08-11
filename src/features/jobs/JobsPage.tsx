@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge, Button, Dialog, ErrorBox, Input, Loading, Notice, Select, useToast } from "../../components/ui";
 import { StatTile } from "../../components/charts";
 import { ago, agoSeconds, dateTime, num } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, ExecStatus, Finding, JobRow, JobsResult, Severity } from "../../lib/types";
 
@@ -46,6 +47,7 @@ export function JobsPage({
   readOnly: boolean;
   requiresTypedConfirm: boolean;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
   const [filter, setFilter] = useState("");
@@ -113,7 +115,7 @@ export function JobsPage({
     await qc.invalidateQueries({ queryKey: ["jobs", project] });
   };
 
-  if (q.isLoading) return <Loading label="Đang lấy Jobs và Scheduler…" />;
+  if (q.isLoading) return <Loading label={t("Đang lấy Jobs và Scheduler…")} />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
@@ -131,47 +133,51 @@ export function JobsPage({
       )}
 
       <div className="grid grid-cols-5 gap-2">
-        <StatTile label="Tổng số job" value={stats.total} />
+        <StatTile label={t("Tổng số job")} value={stats.total} />
         <StatTile
-          label="Cron cần sửa"
+          label={t("Cron cần sửa")}
           value={stats.high}
           tone={stats.high > 0 ? "critical" : "good"}
           icon={stats.high > 0 ? "⚠" : "✓"}
-          sub="trường phút để trống"
+          sub={t("trường phút để trống")}
         />
         <StatTile
-          label="Không có lịch"
+          label={t("Không có lịch")}
           value={stats.noSchedule}
           tone={stats.noSchedule > 0 ? "warning" : "neutral"}
           icon="⚠"
-          sub="không tự chạy"
+          sub={t("không tự chạy")}
         />
         <StatTile
-          label="Lần chạy cuối lỗi"
+          label={t("Lần chạy cuối lỗi")}
           value={stats.failing}
           tone={stats.failing > 0 ? "critical" : "good"}
           icon={stats.failing > 0 ? "✕" : "✓"}
         />
         <StatTile
-          label="Tổng lần chạy / ngày"
+          label={t("Tổng lần chạy / ngày")}
           value={num(q.data?.totalRunsPerDay ?? 0)}
-          sub="suy từ cron của Scheduler"
+          sub={t("suy từ cron của Scheduler")}
         />
       </div>
 
       {stats.envSecrets > 0 && (
         <Notice tone="critical" icon="🔑">
-          <strong>{stats.envSecrets} job</strong> có biến môi trường dạng plain trông như secret
-          (Stripe key, token, mật khẩu…). Ai đọc được cấu hình job là đọc được giá trị đó — nên
-          chuyển sang Secret Manager rồi tham chiếu bằng <code className="mono">secretKeyRef</code>.
-          Bấm vào job để xem biến nào.
+          <strong>{t("{n} job", { n: stats.envSecrets })}</strong>{" "}
+          {t(
+            "có biến môi trường dạng plain trông như secret (Stripe key, token, mật khẩu…). Ai đọc được cấu hình job là đọc được giá trị đó — nên chuyển sang Secret Manager rồi tham chiếu bằng",
+          )}{" "}
+          <code className="mono">secretKeyRef</code>. {t("Bấm vào job để xem biến nào.")}
         </Notice>
       )}
 
       {(q.data?.orphanSchedulers.length ?? 0) > 0 && (
         <Notice tone="warning" icon="⚠">
-          <strong>{q.data?.orphanSchedulers.length} Cloud Scheduler</strong> đang trỏ tới job không
-          còn tồn tại. Mỗi lần fire là một lỗi im lặng:{"\n"}
+          <strong>
+            {t("{n} Cloud Scheduler", { n: q.data?.orphanSchedulers.length ?? 0 })}
+          </strong>{" "}
+          {t("đang trỏ tới job không còn tồn tại. Mỗi lần fire là một lỗi im lặng:")}
+          {"\n"}
           {q.data?.orphanSchedulers
             .map((s) => `• ${s.name} → ${s.targetJob} (${s.schedule})`)
             .join("\n")}
@@ -182,22 +188,22 @@ export function JobsPage({
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="tìm theo tên, source path, image, hoặc cron…"
+          placeholder={t("tìm theo tên, source path, image, hoặc cron…")}
           className="w-80"
         />
         <label className="flex items-center gap-1.5 text-[12px]">
           <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} />
-          Chỉ hiện job có vấn đề
+          {t("Chỉ hiện job có vấn đề")}
         </label>
         <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
-          <option value="issues">Sắp xếp: mức độ vấn đề</option>
-          <option value="runs">Sắp xếp: số lần chạy/ngày</option>
-          <option value="lastRun">Sắp xếp: lần chạy gần nhất</option>
-          <option value="name">Sắp xếp: tên</option>
+          <option value="issues">{t("Sắp xếp: mức độ vấn đề")}</option>
+          <option value="runs">{t("Sắp xếp: số lần chạy/ngày")}</option>
+          <option value="lastRun">{t("Sắp xếp: lần chạy gần nhất")}</option>
+          <option value="name">{t("Sắp xếp: tên")}</option>
         </Select>
         <span className="text-[11px] text-[var(--ink-muted)]">
-          {rows.length}/{stats.total} job
-          {q.data ? ` · dữ liệu ${agoSeconds(q.data.ageSeconds)}` : ""}
+          {t("{shown}/{total} job", { shown: rows.length, total: stats.total })}
+          {q.data ? t(" · dữ liệu {ago}", { ago: agoSeconds(q.data.ageSeconds) }) : ""}
         </span>
         <Button size="sm" variant="ghost" className="ml-auto" loading={q.isFetching} onClick={() => void refresh()}>
           ⟳ Reload
@@ -209,19 +215,19 @@ export function JobsPage({
           <thead style={{ background: "var(--surface-2)" }}>
             <tr className="text-left">
               <th className="px-2 py-1.5 font-medium">Job</th>
-              <th className="px-2 py-1.5 font-medium">Cron · timezone</th>
-              <th className="tnum px-2 py-1.5 text-right font-medium">Lần/ngày</th>
-              <th className="px-2 py-1.5 font-medium">Lần chạy cuối</th>
-              <th className="px-2 py-1.5 font-medium">Resource</th>
-              <th className="px-2 py-1.5 font-medium">Nguồn (repo)</th>
-              <th className="px-2 py-1.5 font-medium">Cần để ý</th>
+              <th className="px-2 py-1.5 font-medium">{t("Cron · timezone")}</th>
+              <th className="tnum px-2 py-1.5 text-right font-medium">{t("Lần/ngày")}</th>
+              <th className="px-2 py-1.5 font-medium">{t("Lần chạy cuối")}</th>
+              <th className="px-2 py-1.5 font-medium">{t("Resource")}</th>
+              <th className="px-2 py-1.5 font-medium">{t("Nguồn (repo)")}</th>
+              <th className="px-2 py-1.5 font-medium">{t("Cần để ý")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-2 py-6 text-center text-[var(--ink-muted)]">
-                  Không có job nào khớp.
+                  {t("Không có job nào khớp.")}
                 </td>
               </tr>
             )}
@@ -242,7 +248,7 @@ export function JobsPage({
                   <td className="mono px-2 py-1.5 whitespace-nowrap font-medium">{j.name}</td>
                   <td className="mono px-2 py-1.5 whitespace-nowrap">
                     {j.schedulers.length === 0 ? (
-                      <span className="text-[var(--ink-muted)]">— không có lịch</span>
+                      <span className="text-[var(--ink-muted)]">{t("— không có lịch")}</span>
                     ) : (
                       j.schedulers.map((s) => (
                         <div key={s.name} className="flex items-center gap-1.5">
@@ -262,7 +268,7 @@ export function JobsPage({
                       <span style={{ color: `var(--status-${ex.tone === "neutral" ? "good" : ex.tone})` }}>
                         {ex.icon}
                       </span>
-                      {j.lastExecutionTime ? ago(j.lastExecutionTime) : ex.text}
+                      {j.lastExecutionTime ? ago(j.lastExecutionTime) : t(ex.text)}
                     </span>
                   </td>
                   <td className="px-2 py-1.5 whitespace-nowrap">
@@ -279,7 +285,7 @@ export function JobsPage({
                         </Badge>
                       )}
                       {j.envSecrets.length > 0 && (
-                        <Badge tone="critical" icon="🔑" title="env plain trông như secret">
+                        <Badge tone="critical" icon="🔑" title={t("env plain trông như secret")}>
                           {j.envSecrets.length}
                         </Badge>
                       )}
@@ -322,6 +328,8 @@ function JobDetailDialog({
   onChanged: () => void;
   toast: (t: { tone: "good" | "critical" | "warning" | "info"; title: string; body?: string }) => void;
 }) {
+  // Hook trước mọi return sớm.
+  const t = useT();
   const [confirm, setConfirm] = useState("");
   const [force, setForce] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -349,7 +357,10 @@ function JobDetailDialog({
       <div className="flex flex-col gap-3">
         {job.envSecrets.length > 0 && (
           <Notice tone="critical" icon="🔑">
-            {job.envSecrets.length} biến môi trường dạng plain trông như secret:{"\n"}
+            {t("{n} biến môi trường dạng plain trông như secret:", {
+              n: job.envSecrets.length,
+            })}
+            {"\n"}
             {job.envSecrets
               .map((e) => `• ${e.envName} (${e.valueHint}, ${e.valueLen} byte) — ${e.reason}`)
               .join("\n")}
@@ -361,7 +372,8 @@ function JobDetailDialog({
             {f.message}
             {f.suggestion && (
               <>
-                {"\n\n"}Gợi ý: <code className="mono">{f.suggestion}</code>
+                {"\n\n"}
+                {t("Gợi ý:")} <code className="mono">{f.suggestion}</code>
               </>
             )}
           </Notice>
@@ -372,16 +384,22 @@ function JobDetailDialog({
             [
               ["Region", job.region],
               ["Image", job.image ?? "–"],
-              ["Nguồn trong repo", job.sourcePath ?? "–"],
-              ["Service account", job.serviceAccount ?? "–"],
+              [t("Nguồn trong repo"), job.sourcePath ?? "–"],
+              [t("Service account"), job.serviceAccount ?? "–"],
               ["Task / parallelism", `${job.taskCount ?? "–"} / ${job.parallelism ?? "–"}`],
               ["Max retries", String(job.maxRetries ?? "–")],
               ["Timeout", job.timeout ?? "–"],
-              ["CPU / Memory", `${job.cpu ?? "–"} / ${job.memory ?? "–"}`],
-              ["Tổng số lần đã chạy", num(job.executionCount ?? 0)],
-              ["Execution cuối", job.lastExecution ?? "–"],
-              ["Thời điểm", job.lastExecutionTime ? dateTime(job.lastExecutionTime) : "–"],
-              ["Env", `${job.envCount} biến · ${job.secretEnvCount} từ secret`],
+              [t("CPU / Memory"), `${job.cpu ?? "–"} / ${job.memory ?? "–"}`],
+              [t("Tổng số lần đã chạy"), num(job.executionCount ?? 0)],
+              [t("Execution cuối"), job.lastExecution ?? "–"],
+              [t("Thời điểm"), job.lastExecutionTime ? dateTime(job.lastExecutionTime) : "–"],
+              [
+                t("Env"),
+                t("{total} biến · {secret} từ secret", {
+                  total: job.envCount,
+                  secret: job.secretEnvCount,
+                }),
+              ],
             ] as Array<[string, string]>
           ).map(([k, v]) => (
             <div key={k} className="flex gap-2">
@@ -393,7 +411,7 @@ function JobDetailDialog({
 
         {job.schedulers.length > 0 && (
           <div>
-            <h3 className="mb-1.5 text-[12px] font-semibold">Lịch chạy</h3>
+            <h3 className="mb-1.5 text-[12px] font-semibold">{t("Lịch chạy")}</h3>
             <div className="flex flex-col gap-1.5">
               {job.schedulers.map((s) => (
                 <div key={s.name} className="flex flex-wrap items-center gap-2 rounded border px-2 py-1.5 text-[11px]">
@@ -402,7 +420,9 @@ function JobDetailDialog({
                   <span className="text-[var(--ink-muted)]">{s.timeZone}</span>
                   <Badge tone={s.state === "ENABLED" ? "good" : "warning"}>{s.state}</Badge>
                   {s.lastAttemptTime && (
-                    <span className="text-[var(--ink-muted)]">fire cuối {ago(s.lastAttemptTime)}</span>
+                    <span className="text-[var(--ink-muted)]">
+                      {t("fire cuối {ago}", { ago: ago(s.lastAttemptTime) })}
+                    </span>
                   )}
                   <Button
                     size="sm"
@@ -411,8 +431,8 @@ function JobDetailDialog({
                     disabled={readOnly || busy || !confirmOk}
                     title={
                       s.state === "ENABLED"
-                        ? "Tạm dừng lịch — đảo lại được, dùng khi cron chạy loạn"
-                        : "Bật lại lịch"
+                        ? t("Tạm dừng lịch — đảo lại được, dùng khi cron chạy loạn")
+                        : t("Bật lại lịch")
                     }
                     onClick={() =>
                       void act(
@@ -424,11 +444,13 @@ function JobDetailDialog({
                             paused: s.state === "ENABLED",
                             confirmText: confirmOk ? confirm || null : null,
                           }),
-                        s.state === "ENABLED" ? `Đã tạm dừng ${s.name}` : `Đã bật lại ${s.name}`,
+                        s.state === "ENABLED"
+                          ? t("Đã tạm dừng {name}", { name: s.name })
+                          : t("Đã bật lại {name}", { name: s.name }),
                       )
                     }
                   >
-                    {s.state === "ENABLED" ? "⏸ Tạm dừng" : "▶ Bật lại"}
+                    {s.state === "ENABLED" ? t("⏸ Tạm dừng") : t("▶ Bật lại")}
                   </Button>
                 </div>
               ))}
@@ -437,12 +459,17 @@ function JobDetailDialog({
         )}
 
         <Notice tone="warning" icon="⚠">
-          <strong>Chạy tay job không idempotent.</strong> Khác với sửa env (gửi hai lần cho cùng kết
-          quả), chạy job hai lần tạo hai execution và job batch có thể xử lý trùng dữ liệu.
+          <strong>{t("Chạy tay job không idempotent.")}</strong>{" "}
+          {t(
+            "Khác với sửa env (gửi hai lần cho cùng kết quả), chạy job hai lần tạo hai execution và job batch có thể xử lý trùng dữ liệu.",
+          )}
           {job.lastExecutionTime && (
             <>
-              {"\n\n"}Lần chạy gần nhất: {ago(job.lastExecutionTime)} — nếu vừa chạy xong thì rất có
-              thể bạn không cần chạy tay.
+              {"\n\n"}
+              {t(
+                "Lần chạy gần nhất: {ago} — nếu vừa chạy xong thì rất có thể bạn không cần chạy tay.",
+                { ago: ago(job.lastExecutionTime) },
+              )}
             </>
           )}
         </Notice>
@@ -450,12 +477,13 @@ function JobDetailDialog({
         {requiresTypedConfirm && (
           <div className="rounded-md border p-2.5" style={{ borderColor: "var(--status-critical)" }}>
             <p className="mb-1.5 text-[12px]">
-              Gõ đúng tên job <code className="mono">{job.name}</code> để mở các thao tác ghi:
+              {t("Gõ đúng tên job")} <code className="mono">{job.name}</code>{" "}
+              {t("để mở các thao tác ghi:")}
             </p>
             <Input
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="gõ lại tên job"
+              placeholder={t("gõ lại tên job")}
               invalid={confirm.length > 0 && !confirmOk}
               autoComplete="off"
             />
@@ -464,7 +492,7 @@ function JobDetailDialog({
 
         <label className="flex items-center gap-2 text-[12px]">
           <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
-          Chạy dù đang có execution dở (bỏ lớp chặn chồng lấn)
+          {t("Chạy dù đang có execution dở (bỏ lớp chặn chồng lấn)")}
         </label>
 
         <ErrorBox error={error} />
@@ -472,7 +500,7 @@ function JobDetailDialog({
         <div className="flex items-center gap-2">
           {readOnly && (
             <span className="text-[11px] text-[var(--ink-muted)]">
-              Đang ở chế độ chỉ đọc — bật “Cho ghi” ở thanh trên để chạy job.
+              {t("Đang ở chế độ chỉ đọc — bật “Cho ghi” ở thanh trên để chạy job.")}
             </span>
           )}
           <Button
@@ -490,11 +518,11 @@ function JobDetailDialog({
                     confirmText: confirmOk ? confirm || null : null,
                     force,
                   }),
-                `Đã tạo execution cho ${job.name}`,
+                t("Đã tạo execution cho {name}", { name: job.name }),
               )
             }
           >
-            ▶ Chạy job ngay
+            {t("▶ Chạy job ngay")}
           </Button>
         </div>
       </div>

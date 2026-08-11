@@ -31,6 +31,25 @@ impl EnvLabel {
     }
 }
 
+/// Ngôn ngữ hiển thị của UI.
+///
+/// Chỉ ảnh hưởng tầng React. Message lỗi sinh từ Rust (`gcp::error`, cron lint, nguồn sai
+/// số chi phí) vẫn là tiếng Việt — dịch chúng cần đổi `CmdError` thành key + tham số, là
+/// một việc riêng.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum Language {
+    /// Mặc định: repo công khai nên người đọc đầu tiên nhiều khả năng không đọc được
+    /// tiếng Việt.
+    #[default]
+    En,
+    Vi,
+}
+
+fn default_language() -> Language {
+    Language::default()
+}
+
 /// Đoán nhãn từ tên project — chỉ để GỢI Ý, không tự áp dụng cho nhánh nguy hiểm.
 ///
 /// Đoán "prod" thì an toàn (chỉ làm app hỏi kỹ hơn). Đoán "dev" mà sai thì bỏ mất lớp
@@ -92,6 +111,10 @@ pub struct Settings {
     /// Mặc định BẬT. Tắt đi thì app thao tác được mọi project account nhìn thấy.
     #[serde(default = "default_true")]
     pub project_lock: bool,
+    /// Ngôn ngữ UI. `serde(default)` bắt buộc: `settings.json` của bản cũ không có field
+    /// này, thiếu default thì cả file parse fail và người dùng mất sạch nhãn đã gắn.
+    #[serde(default = "default_language")]
+    pub language: Language,
     pub project_labels: BTreeMap<String, EnvLabel>,
     pub recent_projects: Vec<String>,
     pub current_project: Option<String>,
@@ -110,6 +133,7 @@ impl Default for Settings {
             read_only: true,
             allowed_projects: vec![DEFAULT_ALLOWED_PROJECT.to_string()],
             project_lock: true,
+            language: Language::default(),
             project_labels: BTreeMap::new(),
             recent_projects: Vec::new(),
             current_project: Some(DEFAULT_ALLOWED_PROJECT.to_string()),
@@ -305,6 +329,39 @@ mod allowlist_tests {
             ..Default::default()
         };
         assert!(!s.project_allowed("example-project"));
+    }
+
+    #[test]
+    fn ngon_ngu_mac_dinh_la_tieng_anh() {
+        assert_eq!(Settings::default().language, Language::En);
+    }
+
+    #[test]
+    fn ngon_ngu_luu_va_doc_lai_duoc() {
+        let dir = std::env::temp_dir().join("crc-test-config");
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("language.json");
+
+        let s = Settings {
+            language: Language::Vi,
+            ..Default::default()
+        };
+        s.save(&p).unwrap();
+        assert_eq!(Settings::load(&p).language, Language::Vi);
+        let _ = std::fs::remove_file(&p);
+    }
+
+    #[test]
+    fn settings_json_thieu_language_van_parse_duoc() {
+        // File của bản trước khi có i18n. Thiếu `serde(default)` thì cả file hỏng và
+        // người dùng mất nhãn project đã gắn.
+        let old = r#"{"readOnly":false,"projectLabels":{"example-prod":"prod"},
+                      "recentProjects":[],"currentProject":null,
+                      "autoRefreshSeconds":30,"logPollSeconds":3,
+                      "revealTimeoutSeconds":30,"metricsWindowMinutes":60}"#;
+        let s: Settings = serde_json::from_str(old).expect("file cũ phải parse được");
+        assert_eq!(s.language, Language::En);
+        assert_eq!(s.label_for("example-prod"), EnvLabel::Prod);
     }
 
     #[test]

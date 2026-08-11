@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { useT } from "../lib/i18n";
 import type { ApplyPreview, ApplyResult, CmdError, EnvChange } from "../lib/types";
 import { Badge, Button, Dialog, ErrorBox, Input, Notice } from "./ui";
 
@@ -11,13 +12,14 @@ import { Badge, Button, Dialog, ErrorBox, Input, Notice } from "./ui";
  * nhận được. Đừng thêm fallback kiểu `value ?? something` cho nhánh secret.
  */
 function DiffRow({ c }: { c: EnvChange }) {
+  const t = useT();
   const base = "mono flex items-start gap-2 rounded px-1.5 py-1 text-[11px] leading-relaxed";
 
   if (c.kind === "added") {
     return (
       <div className={base} style={{ background: "color-mix(in oklab, var(--status-good) 10%, transparent)" }}>
         <span className="shrink-0 font-semibold" style={{ color: "var(--status-good)" }}>
-          + thêm
+          {t("+ thêm")}
         </span>
         <span className="selectable min-w-0 break-all">
           <strong>{c.name}</strong> = {c.value}
@@ -30,12 +32,14 @@ function DiffRow({ c }: { c: EnvChange }) {
     return (
       <div className={base} style={{ background: "color-mix(in oklab, var(--status-critical) 10%, transparent)" }}>
         <span className="shrink-0 font-semibold" style={{ color: "var(--status-critical)" }}>
-          − xoá
+          {t("− xoá")}
         </span>
         <span className="selectable min-w-0 break-all">
           <strong>{c.name}</strong>
           {c.value === null ? (
-            <em className="ml-1 not-italic text-[var(--ink-muted)]">(biến lấy từ Secret Manager)</em>
+            <em className="ml-1 not-italic text-[var(--ink-muted)]">
+              {t("(biến lấy từ Secret Manager)")}
+            </em>
           ) : (
             <> = {c.value}</>
           )}
@@ -60,12 +64,12 @@ function DiffRow({ c }: { c: EnvChange }) {
   return (
     <div className={base} style={{ background: "color-mix(in oklab, var(--series-1) 10%, transparent)" }}>
       <span className="shrink-0 font-semibold" style={{ color: "var(--series-1)" }}>
-        ~ sửa
+        {t("~ sửa")}
       </span>
       <span className="selectable min-w-0 break-all">
         <strong>{c.name}</strong>{" "}
-        <span className="line-through opacity-60">{c.before || "(rỗng)"}</span> →{" "}
-        <strong>{c.after || "(rỗng)"}</strong>
+        <span className="line-through opacity-60">{c.before || t("(rỗng)")}</span> →{" "}
+        <strong>{c.after || t("(rỗng)")}</strong>
       </span>
     </div>
   );
@@ -98,6 +102,7 @@ export function ApplyDialog({
   onApply: (confirmText: string | null, validateOnly: boolean) => void;
   canWrite: boolean;
 }) {
+  const t = useT();
   const [confirm, setConfirm] = useState("");
 
   // Mỗi lần mở lại phải gõ lại tên. Giữ lại giá trị cũ sẽ biến lớp xác nhận thành
@@ -122,20 +127,22 @@ export function ApplyDialog({
       footer={
         done ? (
           <Button variant="primary" onClick={onClose}>
-            Đóng
+            {t("Đóng")}
           </Button>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose} disabled={busy}>
-              Huỷ
+              {t("Huỷ")}
             </Button>
             <Button
               onClick={() => onApply(confirmOk ? confirm || null : null, true)}
               disabled={busy || !canWrite || !confirmOk}
               loading={busy}
-              title="Gửi lên Cloud Run với validateOnly=true: kiểm tra cấu hình mà không tạo revision"
+              title={t(
+                "Gửi lên Cloud Run với validateOnly=true: kiểm tra cấu hình mà không tạo revision",
+              )}
             >
-              Kiểm tra trước
+              {t("Kiểm tra trước")}
             </Button>
             <Button
               variant={requiresTypedConfirm ? "danger" : "primary"}
@@ -143,7 +150,7 @@ export function ApplyDialog({
               disabled={busy || !canWrite || !confirmOk || nothingToDo}
               loading={busy}
             >
-              {requiresTypedConfirm ? "Áp dụng (tạo revision mới)" : "Áp dụng"}
+              {requiresTypedConfirm ? t("Áp dụng (tạo revision mới)") : t("Áp dụng")}
             </Button>
           </>
         )
@@ -154,7 +161,7 @@ export function ApplyDialog({
 
         {!canWrite && (
           <Notice tone="warning" icon="🔒">
-            Đang ở chế độ chỉ đọc. Bật “Cho ghi” ở thanh trên mới áp dụng được.
+            {t("Đang ở chế độ chỉ đọc. Bật “Cho ghi” ở thanh trên mới áp dụng được.")}
           </Notice>
         )}
 
@@ -169,7 +176,7 @@ export function ApplyDialog({
             {preview.envChanges.length > 0 && (
               <section>
                 <h3 className="mb-1.5 text-[12px] font-semibold">
-                  Thay đổi biến môi trường ({preview.envChanges.length})
+                  {t("Thay đổi biến môi trường ({n})", { n: preview.envChanges.length })}
                 </h3>
                 <div className="flex flex-col gap-1">
                   {preview.envChanges.map((c, i) => (
@@ -182,7 +189,7 @@ export function ApplyDialog({
             {preview.scalingChanges.length > 0 && (
               <section>
                 <h3 className="mb-1.5 text-[12px] font-semibold">
-                  Thay đổi scaling / resource ({preview.scalingChanges.length})
+                  {t("Thay đổi scaling / resource ({n})", { n: preview.scalingChanges.length })}
                 </h3>
                 <ul className="mono flex flex-col gap-1 text-[11px]">
                   {preview.scalingChanges.map((c, i) => (
@@ -200,15 +207,17 @@ export function ApplyDialog({
 
             {!done && !nothingToDo && (
               <Notice tone="info" icon="ℹ">
-                Thao tác này tạo một <strong>revision mới</strong>
+                {t("Thao tác này tạo một revision mới")}
                 {preview.nextRevisionHint ? (
                   <>
                     {" "}
-                    (dự kiến <code className="mono">{preview.nextRevisionHint}</code>)
+                    ({t("dự kiến")} <code className="mono">{preview.nextRevisionHint}</code>)
                   </>
                 ) : null}
-                . Cloud Run chỉ chuyển traffic sang revision mới sau khi nó khởi động thành công —
-                nếu nó lỗi, service vẫn tiếp tục chạy revision hiện tại.
+                {". "}
+                {t(
+                  "Cloud Run chỉ chuyển traffic sang revision mới sau khi nó khởi động thành công — nếu nó lỗi, service vẫn tiếp tục chạy revision hiện tại.",
+                )}
               </Notice>
             )}
           </>
@@ -220,8 +229,9 @@ export function ApplyDialog({
             style={{ borderColor: "var(--status-critical)" }}
           >
             <p className="mb-2 text-[12px] leading-relaxed">
-              Project này được gắn nhãn <strong>production</strong> hoặc chưa gắn nhãn. Gõ đúng tên
-              service để xác nhận:
+              {t(
+                "Project này được gắn nhãn production hoặc chưa gắn nhãn. Gõ đúng tên service để xác nhận:",
+              )}
             </p>
             <div className="flex items-center gap-2">
               <code className="mono select-none rounded border px-1.5 py-0.5 text-[12px]">
@@ -230,7 +240,7 @@ export function ApplyDialog({
               <Input
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                placeholder="gõ lại tên service"
+                placeholder={t("gõ lại tên service")}
                 autoComplete="off"
                 spellCheck={false}
                 invalid={confirm.length > 0 && !confirmOk}
@@ -238,7 +248,7 @@ export function ApplyDialog({
               />
               {confirmOk && confirm.length > 0 && (
                 <Badge tone="good" icon="✓">
-                  khớp
+                  {t("khớp")}
                 </Badge>
               )}
             </div>
@@ -255,7 +265,8 @@ export function ApplyDialog({
             {result.outcome.message}
             {result.outcome.newRevision && (
               <>
-                {"\n\n"}Revision mới: <code className="mono">{result.outcome.newRevision}</code>
+                {"\n\n"}
+                {t("Revision mới:")} <code className="mono">{result.outcome.newRevision}</code>
               </>
             )}
           </Notice>

@@ -11,11 +11,18 @@ scaling, inspect secrets/logs/load/instances, switch projects. An internal opera
 run primarily on Windows (macOS best-effort). Open source under the MIT license — see
 `LICENSE`.
 
-**Language policy:** docs exist in English (`*.md`) and Vietnamese (`*.vi.md`); keep both in
-sync when you change one. Code comments, error messages and UI strings are written in
-**Vietnamese**. Variable, function and file names are English. An error message must say
-*what to do next*, not merely *what went wrong* — see `crates/gcp/src/error.rs` for the
-standard.
+**Language policy:**
+
+- **Docs** exist in English (`*.md`) and Vietnamese (`*.vi.md`); keep both in sync.
+- **Code comments** are Vietnamese. Variable, function and file names are English.
+- **UI strings** are authored in Vietnamese and translated at render time. Every
+  user-visible string goes through `t()` from `src/lib/i18n.tsx`, whose **key is the
+  Vietnamese sentence itself** (gettext style). Add the English text to
+  `src/lib/locales/en.ts`. A missing key falls back to Vietnamese rather than rendering
+  empty — see invariant #19.
+- **Error messages produced by Rust** (`gcp::error`, cron lint, `CostReport.errorSources`)
+  are still Vietnamese only. They must say *what to do next*, not merely *what went wrong* —
+  see `crates/gcp/src/error.rs` for the standard.
 
 ## Verify loop — run before reporting done
 
@@ -69,6 +76,10 @@ src-tauri/src/
 src/                        React
   lib/types.ts              ★ mirror of crates/gcp/src/types.rs
   lib/ipc.ts                invoke wrapper (api + apiV2). Commands snake_case, params camelCase.
+  lib/i18n.tsx              ★ t() + I18nProvider. Key = the Vietnamese sentence (gettext style).
+  lib/locales/en.ts         English dictionary. Missing key → falls back to Vietnamese.
+  lib/format.ts             number/date formatting; holds the locale at module scope (see its header)
+  components/LanguageGate.tsx  feeds Settings.language into the tree, above ToastHost
   components/NavRail.tsx    (v2) vertical navigation across the 5 screens
   components/charts.tsx     charts + StatTile, per the dataviz skill
   features/service-detail/tabs/  7 tabs
@@ -233,6 +244,22 @@ without designing its own confirmation layer.
 services, which have a single `template.containers`. `jobs::task_container` walks the correct
 nesting; getting it wrong by one level yields empty and makes you believe the job has no
 container.
+
+### 19. A missing translation falls back to Vietnamese, never to empty
+
+`t()` keys are the Vietnamese sentences themselves, so an untranslated string renders as
+Vietnamese instead of a blank or `undefined`. For an operations tool that matters: a warning
+shown in the wrong language is recoverable, a warning that renders as nothing is not.
+
+Consequence to keep in mind: **editing a Vietnamese string silently orphans its translation.**
+When you reword one, update the matching key in `src/lib/locales/en.ts` in the same commit.
+
+Two mechanical traps, both already hit once:
+
+- Inside a `.map()` whose callback parameter is named `t`, `t()` resolves to the item, not the
+  translator. Name such parameters `toast`, `tr`, … (see `ToastHost`, `OverviewTab`).
+- `useT()` is a hook, so it must be called **before** any early `return` — `ErrorBox`,
+  `TooltipCard` and `JobDetailDialog` all return early.
 
 ## Conventions
 

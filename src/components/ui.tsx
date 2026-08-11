@@ -17,6 +17,7 @@ import {
 } from "react";
 
 import { cn } from "../lib/format";
+import { useT } from "../lib/i18n";
 import type { CmdError } from "../lib/types";
 
 // ---------------------------------------------------------------------------
@@ -357,6 +358,7 @@ export function Dialog({
   footer?: ReactNode;
   width?: number;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -389,7 +391,7 @@ export function Dialog({
       >
         <header className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-[14px] font-semibold">{title}</h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Đóng">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t("Đóng")}>
             ✕
           </Button>
         </header>
@@ -417,12 +419,14 @@ export function Dialog({
 export function ErrorBox({
   error,
   onRetry,
-  retryLabel = "Thử lại",
+  retryLabel,
 }: {
   error: CmdError | null | undefined;
   onRetry?: () => void;
   retryLabel?: string;
 }) {
+  // `useT` phải gọi trước mọi `return` sớm — hook không được nằm sau nhánh điều kiện.
+  const t = useT();
   if (!error) return null;
 
   const tone: BadgeTone = (
@@ -440,7 +444,9 @@ export function ErrorBox({
     ? "warning"
     : "critical";
 
-  const heading =
+  // `kind` là chuỗi ổn định từ Rust để phân nhánh — tiêu đề thì dịch được, `error.message`
+  // thì không (nó do Rust sinh ra, vẫn là tiếng Việt).
+  const heading = t(
     {
       auth: "Chưa xác thực được với GCP",
       permission: "Thiếu quyền",
@@ -458,7 +464,8 @@ export function ErrorBox({
       vaultLocked: "Vault đang khoá",
       jobRunning: "Job đang chạy",
       other: "Có lỗi xảy ra",
-    }[error.kind] ?? "Có lỗi xảy ra";
+    }[error.kind] ?? "Có lỗi xảy ra",
+  );
 
   return (
     <div
@@ -477,7 +484,7 @@ export function ErrorBox({
       {error.detail && (
         <details className="mt-2">
           <summary className="cursor-pointer text-[11px] text-[var(--ink-muted)]">
-            Chi tiết kỹ thuật
+            {t("Chi tiết kỹ thuật")}
           </summary>
           <pre className="selectable mono mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded border p-2 text-[11px]">
             {error.detail}
@@ -487,7 +494,7 @@ export function ErrorBox({
       {onRetry && (
         <div className="mt-2">
           <Button size="sm" onClick={onRetry}>
-            {retryLabel}
+            {retryLabel ?? t("Thử lại")}
           </Button>
         </div>
       )}
@@ -533,11 +540,13 @@ export function EmptyState({ icon, title, hint }: { icon?: string; title: string
   );
 }
 
-export function Loading({ label = "Đang tải…" }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const t = useT();
+  const text = label ?? t("Đang tải…");
   return (
     <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-[var(--ink-muted)]">
       <Spinner />
-      {label}
+      {text}
     </div>
   );
 }
@@ -563,13 +572,18 @@ export function CopyButton({
   clearAfterMs?: number;
   size?: "sm" | "md";
 }) {
+  const t = useT();
   const [state, setState] = useState<"idle" | "done" | "cleared">("idle");
 
   return (
     <Button
       size={size}
       variant="ghost"
-      title={clearAfterMs ? `Clipboard sẽ được xoá sau ${clearAfterMs / 1000}s` : undefined}
+      title={
+        clearAfterMs
+          ? t("Clipboard sẽ được xoá sau {sec}s", { sec: clearAfterMs / 1000 })
+          : undefined
+      }
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
@@ -594,7 +608,11 @@ export function CopyButton({
         }
       }}
     >
-      {state === "done" ? "✓ Đã copy" : state === "cleared" ? "Đã xoá clipboard" : label}
+      {state === "done"
+        ? t("✓ Đã copy")
+        : state === "cleared"
+          ? t("Đã xoá clipboard")
+          : label}
     </Button>
   );
 }
@@ -622,15 +640,17 @@ export function useToast() {
 }
 
 export function ToastHost({ children }: { children: ReactNode }) {
+  const t = useT();
   const [items, setItems] = useState<Toast[]>([]);
 
-  const push = (t: Omit<Toast, "id">) => {
+  // Đặt tên `toast`, không phải `t` — `t` đã là hàm dịch trong scope này.
+  const push = (toast: Omit<Toast, "id">) => {
     const id = Date.now() + Math.random();
-    setItems((v) => [...v, { ...t, id }]);
+    setItems((v) => [...v, { ...toast, id }]);
     // Toast báo lỗi giữ lâu hơn: người dùng cần thời gian đọc câu hướng dẫn.
     window.setTimeout(
       () => setItems((v) => v.filter((x) => x.id !== id)),
-      t.tone === "critical" || t.tone === "warning" ? 12_000 : 5_000,
+      toast.tone === "critical" || toast.tone === "warning" ? 12_000 : 5_000,
     );
   };
 
@@ -638,25 +658,25 @@ export function ToastHost({ children }: { children: ReactNode }) {
     <ToastCtx.Provider value={push}>
       {children}
       <div className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-96 flex-col gap-2">
-        {items.map((t) => (
+        {items.map((toast) => (
           <div
-            key={t.id}
+            key={toast.id}
             className="pointer-events-auto rounded-md border p-3 shadow-lg"
-            style={{ background: "var(--surface-1)", borderColor: BADGE_COLOR[t.tone] }}
+            style={{ background: "var(--surface-1)", borderColor: BADGE_COLOR[toast.tone] }}
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[13px] font-semibold">{t.title}</p>
+              <p className="text-[13px] font-semibold">{toast.title}</p>
               <button
                 className="text-[var(--ink-muted)]"
-                onClick={() => setItems((v) => v.filter((x) => x.id !== t.id))}
-                aria-label="Đóng"
+                onClick={() => setItems((v) => v.filter((x) => x.id !== toast.id))}
+                aria-label={t("Đóng")}
               >
                 ✕
               </button>
             </div>
-            {t.body && (
+            {toast.body && (
               <p className="selectable mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-[var(--ink-secondary)]">
-                {t.body}
+                {toast.body}
               </p>
             )}
           </div>

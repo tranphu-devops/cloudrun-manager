@@ -12,6 +12,7 @@ import {
   Select,
 } from "../../../components/ui";
 import { dateTime } from "../../../lib/format";
+import { useT } from "../../../lib/i18n";
 import { api, asCmdError, consoleSecretUrl } from "../../../lib/ipc";
 import { useSecrets, useSecretVersions } from "../../../lib/queries";
 import type { CmdError, RevealResult, ServiceDetail } from "../../../lib/types";
@@ -34,6 +35,7 @@ function RevealPanel({
   secret: string;
   version: string;
 }) {
+  const t = useT();
   const [value, setValue] = useState<RevealResult | null>(null);
   const [error, setError] = useState<CmdError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -82,10 +84,12 @@ function RevealPanel({
               }
             }}
           >
-            👁 Hiện giá trị version {version}
+            {t("👁 Hiện giá trị version {version}", { version })}
           </Button>
           <span className="text-[11px] text-[var(--ink-muted)]">
-            Lần xem sẽ được ghi vào audit log trên máy (chỉ tên secret + version, không ghi giá trị).
+            {t(
+              "Lần xem sẽ được ghi vào audit log trên máy (chỉ tên secret + version, không ghi giá trị).",
+            )}
           </span>
         </div>
       </div>
@@ -96,23 +100,24 @@ function RevealPanel({
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Badge tone="warning" icon="👁">
-          đang hiện · tự ẩn sau {left}s
+          {t("đang hiện · tự ẩn sau {sec}s", { sec: left })}
         </Badge>
         <span className="tnum text-[11px] text-[var(--ink-muted)]">
-          {value.byteLen} byte · {value.lineCount} dòng
+          {t("{bytes} byte · {lines} dòng", { bytes: value.byteLen, lines: value.lineCount })}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           <CopyButton text={value.value} label="Copy" clearAfterMs={60_000} />
           <Button size="sm" variant="ghost" onClick={() => setValue(null)}>
-            Ẩn ngay
+            {t("Ẩn ngay")}
           </Button>
         </div>
       </div>
 
       {value.looksBinary && (
         <Notice tone="warning" icon="⚠">
-          Nội dung này có vẻ là dữ liệu nhị phân (không phải text UTF-8). Phần hiển thị bên dưới đã bị
-          thay ký tự nên <strong>không dùng để copy</strong> — hãy lấy trực tiếp bằng{" "}
+          {t(
+            "Nội dung này có vẻ là dữ liệu nhị phân (không phải text UTF-8). Phần hiển thị bên dưới đã bị thay ký tự nên không dùng để copy — hãy lấy trực tiếp bằng",
+          )}{" "}
           <code className="mono">gcloud secrets versions access</code>.
         </Notice>
       )}
@@ -136,6 +141,7 @@ export function SecretsTab({
   detail: ServiceDetail;
   canReveal: boolean;
 }) {
+  const t = useT();
   const all = useSecrets(project, true);
   const [selected, setSelected] = useState<string | null>(null);
   const [version, setVersion] = useState("latest");
@@ -159,19 +165,26 @@ export function SecretsTab({
     <div className="flex flex-col gap-3">
       {!canReveal && (
         <Notice tone="info" icon="🔒">
-          Account hiện tại không có <code className="mono">secretmanager.versions.access</code> trên
-          project này, nên chỉ xem được metadata. Trên project production, không cấp quyền này là một
-          lựa chọn hợp lý.
+          {t("Account hiện tại không có")}{" "}
+          <code className="mono">secretmanager.versions.access</code>{" "}
+          {t(
+            "trên project này, nên chỉ xem được metadata. Trên project production, không cấp quyền này là một lựa chọn hợp lý.",
+          )}
         </Notice>
       )}
 
       <ErrorBox error={all.error} onRetry={() => void all.refetch()} />
-      {all.isLoading && <Loading label="Đang lấy danh sách secret…" />}
+      {all.isLoading && <Loading label={t("Đang lấy danh sách secret…")} />}
 
-      <Card title={`Secret mà ${detail.summary.name} đang dùng (${usedNames.size})`}>
+      <Card
+        title={t("Secret mà {service} đang dùng ({count})", {
+          service: detail.summary.name,
+          count: usedNames.size,
+        })}
+      >
         {usedNames.size === 0 ? (
           <p className="text-[12px] text-[var(--ink-muted)]">
-            Service này không tham chiếu secret nào — không qua env, không qua volume mount.
+            {t("Service này không tham chiếu secret nào — không qua env, không qua volume mount.")}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
@@ -193,8 +206,10 @@ export function SecretsTab({
                     <Badge>version {e.version}</Badge>
                     {e.version === "latest" && (
                       <span className="text-[11px] text-[var(--ink-muted)]">
-                        dùng <code className="mono">latest</code>: revision mới sẽ tự lấy version mới
-                        nhất, revision đang chạy thì không
+                        {t("dùng")} <code className="mono">latest</code>
+                        {t(
+                          ": revision mới sẽ tự lấy version mới nhất, revision đang chạy thì không",
+                        )}
                       </span>
                     )}
                     <div className="ml-auto flex gap-1.5">
@@ -253,7 +268,7 @@ export function SecretsTab({
                 ))}
               </Select>
               <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
-                Đóng
+                {t("Đóng")}
               </Button>
             </div>
           }
@@ -265,9 +280,9 @@ export function SecretsTab({
                 <table className="w-full text-[11px]">
                   <thead style={{ background: "var(--surface-2)" }}>
                     <tr className="text-left">
-                      <th className="px-2 py-1 font-medium">Version</th>
-                      <th className="px-2 py-1 font-medium">Trạng thái</th>
-                      <th className="px-2 py-1 font-medium">Tạo lúc</th>
+                      <th className="px-2 py-1 font-medium">{t("Version")}</th>
+                      <th className="px-2 py-1 font-medium">{t("Trạng thái")}</th>
+                      <th className="px-2 py-1 font-medium">{t("Tạo lúc")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -294,21 +309,23 @@ export function SecretsTab({
             {canReveal ? (
               <RevealPanel project={project} secret={selected} version={version} />
             ) : (
-              <Notice tone="info">Không có quyền xem giá trị secret trên project này.</Notice>
+              <Notice tone="info">
+                {t("Không có quyền xem giá trị secret trên project này.")}
+              </Notice>
             )}
           </div>
         </Card>
       )}
 
       {others.length > 0 && (
-        <Card title={`Secret khác trong project (${others.length})`}>
+        <Card title={t("Secret khác trong project ({count})", { count: others.length })}>
           <div className="max-h-72 overflow-auto">
             <table className="w-full text-[11px]">
               <thead className="sticky top-0" style={{ background: "var(--surface-2)" }}>
                 <tr className="text-left">
-                  <th className="px-2 py-1 font-medium">Tên</th>
-                  <th className="px-2 py-1 font-medium">Service đang dùng</th>
-                  <th className="px-2 py-1 font-medium">Tạo lúc</th>
+                  <th className="px-2 py-1 font-medium">{t("Tên")}</th>
+                  <th className="px-2 py-1 font-medium">{t("Service đang dùng")}</th>
+                  <th className="px-2 py-1 font-medium">{t("Tạo lúc")}</th>
                   <th className="px-2 py-1" />
                 </tr>
               </thead>
@@ -319,7 +336,7 @@ export function SecretsTab({
                     <td className="px-2 py-1">
                       {s.usedBy.length === 0 ? (
                         // Secret không service nào dùng là tín hiệu để dọn dẹp — nói rõ.
-                        <span className="text-[var(--ink-muted)]">không service nào</span>
+                        <span className="text-[var(--ink-muted)]">{t("không service nào")}</span>
                       ) : (
                         s.usedBy.join(", ")
                       )}
@@ -340,8 +357,9 @@ export function SecretsTab({
 
       {used.length !== usedNames.size && all.data && (
         <Notice tone="info" icon="ℹ">
-          Có secret service này tham chiếu nhưng không xuất hiện trong danh sách Secret Manager của
-          project — thường là secret nằm ở project khác (cross-project reference), hoặc đã bị xoá.
+          {t(
+            "Có secret service này tham chiếu nhưng không xuất hiện trong danh sách Secret Manager của project — thường là secret nằm ở project khác (cross-project reference), hoặc đã bị xoá.",
+          )}
         </Notice>
       )}
     </div>

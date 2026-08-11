@@ -27,6 +27,7 @@ import {
 
 import { cn, compact, num, timeAxis, timeTooltip } from "../lib/format";
 import type { ChartData, SeriesData } from "../lib/types";
+import { useT } from "../lib/i18n";
 import { Badge, Button, EmptyState } from "./ui";
 
 /** Thứ tự slot là cơ chế bảo đảm an toàn cho người mù màu — không đảo, không sinh thêm. */
@@ -52,7 +53,11 @@ function seriesColor(label: string, order: string[]): string {
   return SLOTS[i >= 0 ? Math.min(i, SLOTS.length - 1) : 0] as string;
 }
 
-/** Nhãn dễ đọc cho những label kỹ thuật hay gặp. */
+/**
+ * Nhãn dễ đọc cho những label kỹ thuật hay gặp.
+ *
+ * Giá trị ở đây là **key dịch**, không phải chuỗi hiển thị — chỗ nào render thì bọc `t()`.
+ */
 const LABEL_VI: Record<string, string> = {
   active: "đang xử lý",
   idle: "rảnh (idle)",
@@ -97,6 +102,7 @@ function toRows(series: SeriesData[]): { rows: Row[]; order: string[] } {
 // ---------------------------------------------------------------------------
 
 function Legend({ order, unit }: { order: string[]; unit: string }) {
+  const t = useT();
   // Một series thì tiêu đề đã nói rõ là gì — thêm legend chỉ là nhiễu.
   if (order.length < 2) return null;
   return (
@@ -108,7 +114,7 @@ function Legend({ order, unit }: { order: string[]; unit: string }) {
             className="inline-block h-2 w-2 rounded-sm"
             style={{ background: seriesColor(label, order) }}
           />
-          {labelOf(label)}
+          {t(labelOf(label))}
           {unit && <span className="text-[var(--ink-muted)]">({unit})</span>}
         </li>
       ))}
@@ -127,6 +133,7 @@ function DataTable({
   unit: string;
   windowMinutes: number;
 }) {
+  const t = useT();
   // Mới nhất lên đầu: khi đọc bảng người ta hỏi "bây giờ đang bao nhiêu" trước.
   const recent = [...rows].reverse().slice(0, 60);
   return (
@@ -134,10 +141,10 @@ function DataTable({
       <table className="w-full text-[11px]">
         <thead className="sticky top-0" style={{ background: "var(--surface-2)" }}>
           <tr>
-            <th className="px-2 py-1 text-left font-medium">Thời điểm</th>
+            <th className="px-2 py-1 text-left font-medium">{t("Thời điểm")}</th>
             {order.map((o) => (
               <th key={o} className="px-2 py-1 text-right font-medium">
-                {labelOf(o)} {unit && <span className="text-[var(--ink-muted)]">({unit})</span>}
+                {t(labelOf(o))} {unit && <span className="text-[var(--ink-muted)]">({unit})</span>}
               </th>
             ))}
           </tr>
@@ -172,6 +179,8 @@ function TooltipCard({
   unit: string;
   order: string[];
 }) {
+  // Hook phải đứng trước return sớm.
+  const t = useT();
   if (!active || !payload || payload.length === 0) return null;
   return (
     <div
@@ -190,7 +199,7 @@ function TooltipCard({
                 className="inline-block h-2 w-2 rounded-sm"
                 style={{ background: seriesColor(p.name ?? "", order) }}
               />
-              {labelOf(p.name ?? "")}
+              {t(labelOf(p.name ?? ""))}
             </span>
             <span className="font-medium">
               {num(p.value ?? null, unit === "%" ? 1 : 2)}
@@ -222,6 +231,7 @@ export function TimeChart({
   height?: number;
   yDomainMax?: number;
 }) {
+  const t = useT();
   const [showTable, setShowTable] = useState(false);
   const { rows, order } = useMemo(() => toRows(data.series), [data.series]);
 
@@ -235,7 +245,7 @@ export function TimeChart({
         <Legend order={order} unit={data.unit} />
         {rows.length > 0 && (
           <Button size="sm" variant="ghost" onClick={() => setShowTable((v) => !v)}>
-            {showTable ? "Xem chart" : "Bảng số"}
+            {showTable ? t("Xem chart") : t("Bảng số")}
           </Button>
         )}
       </div>
@@ -253,10 +263,10 @@ export function TimeChart({
           style={{ height }}
         >
           <Badge tone="warning" icon="⚠">
-            Không lấy được metric
+            {t("Không lấy được metric")}
           </Badge>
           <p className="max-w-md text-[11px] leading-relaxed text-[var(--ink-muted)]">
-            {data.note ?? "Monitoring API không trả về dữ liệu cho metric này."}
+            {data.note ?? t("Monitoring API không trả về dữ liệu cho metric này.")}
           </p>
           <p className="mono text-[10px] text-[var(--ink-muted)]">{data.metric}</p>
         </div>
@@ -271,10 +281,12 @@ export function TimeChart({
         <div className="rounded border border-dashed" style={{ height }}>
           <EmptyState
             icon="—"
-            title="Không có dữ liệu trong khoảng này"
+            title={t("Không có dữ liệu trong khoảng này")}
             hint={
               data.note ??
-              "Cloud Run chỉ ghi metric khi có hoạt động, nên service đang không nhận request sẽ trống."
+              t(
+                "Cloud Run chỉ ghi metric khi có hoạt động, nên service đang không nhận request sẽ trống.",
+              )
             }
           />
         </div>

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { StatTile } from "../../components/charts";
 import { Badge, Button, EmptyState, ErrorBox, Input, Loading, Notice, Select } from "../../components/ui";
 import { ago, compact, num, percent, regionLabel, shortImage } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 import { useProjectLoad, useServices } from "../../lib/queries";
 import type { Health, ProjectLoadSnapshot, ServiceSummary } from "../../lib/types";
 
@@ -44,6 +45,7 @@ export function StatisticsPage({
   autoRefreshMs: number;
   onOpenService: (s: { region: string; name: string }) => void;
 }) {
+  const t = useT();
   const servicesQ = useServices(project, autoRefreshMs);
   const loadQ = useProjectLoad(project, autoRefreshMs);
 
@@ -106,7 +108,7 @@ export function StatisticsPage({
     return list;
   }, [all, snap, filter, sortBy, onlyIssues]);
 
-  if (servicesQ.isLoading) return <Loading label="Đang lấy toàn bộ service…" />;
+  if (servicesQ.isLoading) return <Loading label={t("Đang lấy toàn bộ service…")} />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
@@ -114,65 +116,82 @@ export function StatisticsPage({
 
       {snap && snap.missing.length > 0 && (
         <Notice tone="warning" icon="⚠">
-          {snap.missing.length} service không lấy được số tải (instance/rps). Cột tải của chúng hiện{" "}
-          <span className="mono">–</span>, không phải 0 — đừng đọc thành “không có tải”.
+          {t("{n} service không lấy được số tải (instance/rps). Cột tải của chúng hiện", {
+            n: snap.missing.length,
+          })}{" "}
+          <span className="mono">–</span>
+          {t(", không phải 0 — đừng đọc thành “không có tải”.")}
         </Notice>
       )}
 
       <div className="grid grid-cols-4 gap-2 lg:grid-cols-8">
-        <StatTile label="Tổng service" value={stats.total} />
+        <StatTile label={t("Tổng service")} value={stats.total} />
         <StatTile
-          label="Đang lỗi"
+          label={t("Đang lỗi")}
           value={stats.unhealthy}
           tone={stats.unhealthy > 0 ? "critical" : "good"}
           icon={stats.unhealthy > 0 ? "✕" : "✓"}
         />
         <StatTile
-          label="Đang cập nhật"
+          label={t("Đang cập nhật")}
           value={stats.reconciling}
           tone={stats.reconciling > 0 ? "warning" : "neutral"}
           icon="◐"
         />
         <StatTile
-          label="Có request lỗi"
+          label={t("Có request lỗi")}
           value={stats.erroring}
           tone={stats.erroring > 0 ? "warning" : "good"}
           icon={stats.erroring > 0 ? "⚠" : "✓"}
-          sub="trong 30 phút"
+          sub={t("trong 30 phút")}
         />
         <StatTile
-          label="Traffic ghim"
+          label={t("Traffic ghim")}
           value={stats.pinned}
           tone={stats.pinned > 0 ? "warning" : "neutral"}
           icon="⚠"
-          sub="revision mới không nhận traffic"
+          sub={t("revision mới không nhận traffic")}
         />
-        <StatTile label="Luôn bật (min>0)" value={stats.alwaysOn} sub="tính tiền cả khi rảnh" />
-        <StatTile label="Tổng instance" value={compact(stats.totalInstances)} sub="đang chạy" />
-        <StatTile label="Tổng RPS" value={compact(stats.totalRps)} unit="req/s" />
+        <StatTile
+          label={t("Luôn bật (min>0)")}
+          value={stats.alwaysOn}
+          sub={t("tính tiền cả khi rảnh")}
+        />
+        <StatTile
+          label={t("Tổng instance")}
+          value={compact(stats.totalInstances)}
+          sub={t("đang chạy")}
+        />
+        <StatTile label={t("Tổng RPS")} value={compact(stats.totalRps)} unit="req/s" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="tìm theo tên, image, region…"
+          placeholder={t("tìm theo tên, image, region…")}
           className="w-72"
         />
         <label className="flex items-center gap-1.5 text-[12px]">
           <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} />
-          Chỉ hiện service có vấn đề
+          {t("Chỉ hiện service có vấn đề")}
         </label>
         <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}>
-          <option value="health">Sắp xếp: trạng thái</option>
-          <option value="instances">Sắp xếp: số instance</option>
-          <option value="rps">Sắp xếp: RPS</option>
-          <option value="errorRate">Sắp xếp: tỉ lệ lỗi</option>
-          <option value="name">Sắp xếp: tên</option>
+          <option value="health">{t("Sắp xếp: trạng thái")}</option>
+          <option value="instances">{t("Sắp xếp: số instance")}</option>
+          <option value="rps">{t("Sắp xếp: RPS")}</option>
+          <option value="errorRate">{t("Sắp xếp: tỉ lệ lỗi")}</option>
+          <option value="name">{t("Sắp xếp: tên")}</option>
         </Select>
         <span className="text-[11px] text-[var(--ink-muted)]">
-          {rows.length}/{stats.total} service
-          {servicesQ.data ? ` · dữ liệu ${ago(new Date(Date.now() - servicesQ.data.ageSeconds * 1000).toISOString())}` : ""}
+          {t("{shown}/{total} service", { shown: rows.length, total: stats.total })}
+          {servicesQ.data
+            ? t(" · dữ liệu {ago}", {
+                ago: ago(
+                  new Date(Date.now() - servicesQ.data.ageSeconds * 1000).toISOString(),
+                ),
+              })
+            : ""}
         </span>
         <Button
           size="sm"
@@ -189,21 +208,21 @@ export function StatisticsPage({
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState icon="◧" title="Không có service nào khớp" />
+        <EmptyState icon="◧" title={t("Không có service nào khớp")} />
       ) : (
         <div className="overflow-x-auto rounded-lg border" style={{ background: "var(--surface-1)" }}>
           <table className="w-full text-[11px]">
             <thead style={{ background: "var(--surface-2)" }}>
               <tr className="text-left">
-                <th className="px-2 py-1.5 font-medium">Service</th>
-                <th className="px-2 py-1.5 font-medium">Trạng thái</th>
-                <th className="tnum px-2 py-1.5 text-right font-medium">Instance</th>
-                <th className="tnum px-2 py-1.5 text-right font-medium">RPS</th>
-                <th className="tnum px-2 py-1.5 text-right font-medium">Lỗi</th>
-                <th className="tnum px-2 py-1.5 text-right font-medium">Min/Max</th>
+                <th className="px-2 py-1.5 font-medium">{t("Service")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Trạng thái")}</th>
+                <th className="tnum px-2 py-1.5 text-right font-medium">{t("Instance")}</th>
+                <th className="tnum px-2 py-1.5 text-right font-medium">{t("RPS")}</th>
+                <th className="tnum px-2 py-1.5 text-right font-medium">{t("Lỗi")}</th>
+                <th className="tnum px-2 py-1.5 text-right font-medium">{t("Min/Max")}</th>
                 <th className="px-2 py-1.5 font-medium">Env</th>
-                <th className="px-2 py-1.5 font-medium">Image</th>
-                <th className="px-2 py-1.5 font-medium">Sửa lần cuối</th>
+                <th className="px-2 py-1.5 font-medium">{t("Image")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Sửa lần cuối")}</th>
               </tr>
             </thead>
             <tbody>
@@ -227,6 +246,7 @@ function StatRow({
   snap: ProjectLoadSnapshot | undefined;
   onOpen: () => void;
 }) {
+  const t = useT();
   const h = HEALTH_META[s.health];
   const l = load(snap, s.name);
   const err = l.errorRate ?? 0;
@@ -247,7 +267,7 @@ function StatRow({
       </td>
       <td className="px-2 py-1.5 whitespace-nowrap">
         <Badge tone={h.tone} icon={h.icon}>
-          {h.text}
+          {t(h.text)}
         </Badge>
       </td>
       <td className="tnum px-2 py-1.5 text-right">{l.instances === null ? "–" : num(l.instances)}</td>
@@ -266,13 +286,17 @@ function StatRow({
         <span className="flex items-center gap-1">
           <span>{s.envCount}</span>
           {s.secretEnvCount > 0 && (
-            <Badge tone="info" icon="🔑" title="biến từ Secret Manager">
+            <Badge tone="info" icon="🔑" title={t("biến từ Secret Manager")}>
               {s.secretEnvCount}
             </Badge>
           )}
           {s.trafficPinned && (
-            <Badge tone="warning" icon="📌" title="Traffic ghim — revision mới không nhận traffic">
-              ghim
+            <Badge
+              tone="warning"
+              icon="📌"
+              title={t("Traffic ghim — revision mới không nhận traffic")}
+            >
+              {t("ghim")}
             </Badge>
           )}
         </span>

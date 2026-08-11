@@ -3,9 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { CredentialPanel } from "../features/vault/CredentialPanel";
 import { agoSeconds } from "../lib/format";
+import { LANGUAGE_NAMES, useI18n, useT } from "../lib/i18n";
 import { api, apiV2 } from "../lib/ipc";
 import { keys, useAuditTail, useAuth, useCapabilities, useProjects } from "../lib/queries";
-import type { EnvLabel, Settings } from "../lib/types";
+import type { EnvLabel, Language, Settings } from "../lib/types";
 import {
   Badge,
   Button,
@@ -30,24 +31,33 @@ const LABEL_TEXT: Record<EnvLabel, string> = {
 };
 
 export function EnvLabelBadge({ label }: { label: EnvLabel }) {
+  const t = useT();
   if (label === "prod") {
     return (
-      <Badge tone="critical" icon="●" title="Project production — mọi thao tác ghi cần gõ tên service">
-        {LABEL_TEXT.prod}
+      <Badge
+        tone="critical"
+        icon="●"
+        title={t("Project production — mọi thao tác ghi cần gõ tên service")}
+      >
+        {t(LABEL_TEXT.prod)}
       </Badge>
     );
   }
   if (label === "unknown") {
     return (
-      <Badge tone="warning" icon="?" title="Chưa gắn nhãn — app xử lý như production cho an toàn">
-        {LABEL_TEXT.unknown}
+      <Badge
+        tone="warning"
+        icon="?"
+        title={t("Chưa gắn nhãn — app xử lý như production cho an toàn")}
+      >
+        {t(LABEL_TEXT.unknown)}
       </Badge>
     );
   }
   if (label === "staging") {
-    return <Badge tone="serious">{LABEL_TEXT.staging}</Badge>;
+    return <Badge tone="serious">{t(LABEL_TEXT.staging)}</Badge>;
   }
-  return <Badge tone="good">{LABEL_TEXT.dev}</Badge>;
+  return <Badge tone="good">{t(LABEL_TEXT.dev)}</Badge>;
 }
 
 export function TopBar({
@@ -71,6 +81,7 @@ export function TopBar({
   theme: "light" | "dark" | "system";
   onThemeToggle: () => void;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
   const auth = useAuth();
@@ -104,10 +115,10 @@ export function TopBar({
           aria-label="GCP project"
         >
           <option value="" disabled>
-            {projects.isLoading ? "Đang tải project…" : "Chọn project…"}
+            {projects.isLoading ? t("Đang tải project…") : t("Chọn project…")}
           </option>
           {settings.recentProjects.length > 0 && (
-            <optgroup label="Gần đây">
+            <optgroup label={t("Gần đây")}>
               {settings.recentProjects.map((p) => (
                 <option key={`r-${p}`} value={p}>
                   {p}
@@ -115,7 +126,7 @@ export function TopBar({
               ))}
             </optgroup>
           )}
-          <optgroup label="Tất cả project">
+          <optgroup label={t("Tất cả project")}>
             {(projects.data ?? []).map((p) => (
               <option key={p.projectId} value={p.projectId}>
                 {p.displayName === p.projectId ? p.projectId : `${p.displayName} — ${p.projectId}`}
@@ -128,7 +139,7 @@ export function TopBar({
 
         {project && label === "unknown" && (
           <Select
-            aria-label="Gắn nhãn môi trường"
+            aria-label={t("Gắn nhãn môi trường")}
             value=""
             className="h-7 text-[11px]"
             onChange={async (e) => {
@@ -137,15 +148,18 @@ export function TopBar({
               patchSettings(await api.setProjectLabel(project, v));
               toast({
                 tone: "good",
-                title: `Đã gắn nhãn ${LABEL_TEXT[v]} cho ${project}`,
+                title: t("Đã gắn nhãn {label} cho {project}", {
+                  label: t(LABEL_TEXT[v]),
+                  project: project ?? "",
+                }),
                 body:
                   v === "dev" || v === "staging"
-                    ? "Từ giờ thao tác ghi trên project này không cần gõ tên service."
-                    : "Thao tác ghi trên project này sẽ luôn cần gõ tên service.",
+                    ? t("Từ giờ thao tác ghi trên project này không cần gõ tên service.")
+                    : t("Thao tác ghi trên project này sẽ luôn cần gõ tên service."),
               });
             }}
           >
-            <option value="">Gắn nhãn…</option>
+            <option value="">{t("Gắn nhãn…")}</option>
             <option value="dev">Dev</option>
             <option value="staging">Staging</option>
             <option value="prod">Production</option>
@@ -154,12 +168,21 @@ export function TopBar({
 
         <div className="ml-auto flex items-center gap-2">
           {dataAgeSeconds !== null && (
-            <span className="tnum text-[11px] text-[var(--ink-muted)]" title="Độ tươi của dữ liệu đang hiển thị">
-              dữ liệu {agoSeconds(dataAgeSeconds)}
+            <span
+              className="tnum text-[11px] text-[var(--ink-muted)]"
+              title={t("Độ tươi của dữ liệu đang hiển thị")}
+            >
+              {t("dữ liệu {ago}", { ago: agoSeconds(dataAgeSeconds) })}
             </span>
           )}
 
-          <Button size="sm" variant="ghost" onClick={onRefresh} loading={refreshing} title="Bỏ cache và lấy lại">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onRefresh}
+            loading={refreshing}
+            title={t("Bỏ cache và lấy lại")}
+          >
             ⟳ Reload
           </Button>
 
@@ -168,25 +191,28 @@ export function TopBar({
             tone="warn"
             hint={
               settings.readOnly
-                ? "Đang chỉ đọc — app không gửi thay đổi nào lên GCP"
-                : "ĐANG CHO GHI — thao tác sẽ tạo revision mới trên GCP"
+                ? t("Đang chỉ đọc — app không gửi thay đổi nào lên GCP")
+                : t("ĐANG CHO GHI — thao tác sẽ tạo revision mới trên GCP")
             }
-            label={settings.readOnly ? "🔒 Chỉ đọc" : "✎ Cho ghi"}
+            label={settings.readOnly ? t("🔒 Chỉ đọc") : t("✎ Cho ghi")}
             onChange={async (v) => {
               patchSettings(await api.setReadOnly(v));
               if (!v) {
                 toast({
                   tone: isProd ? "critical" : "warning",
-                  title: "Đã bật chế độ ghi",
+                  title: t("Đã bật chế độ ghi"),
                   body: isProd
-                    ? `${project} được gắn nhãn PRODUCTION. Mỗi thao tác ghi vẫn sẽ yêu cầu gõ đúng tên service.`
-                    : "Thao tác sửa env/scaling từ giờ sẽ tạo revision mới thật trên GCP.",
+                    ? t(
+                        "{project} được gắn nhãn PRODUCTION. Mỗi thao tác ghi vẫn sẽ yêu cầu gõ đúng tên service.",
+                        { project: project ?? "" },
+                      )
+                    : t("Thao tác sửa env/scaling từ giờ sẽ tạo revision mới thật trên GCP."),
                 });
               }
             }}
           />
 
-          <Button size="sm" variant="ghost" onClick={onOpenPalette} title="Nhảy tới service">
+          <Button size="sm" variant="ghost" onClick={onOpenPalette} title={t("Nhảy tới service")}>
             🔍 <Kbd>Ctrl K</Kbd>
           </Button>
 
@@ -194,11 +220,21 @@ export function TopBar({
             {theme === "dark" ? "🌙" : theme === "light" ? "☀" : "◐"}
           </Button>
 
-          <Button size="sm" variant="ghost" onClick={() => setAuditOpen(true)} title="Lịch sử thao tác">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setAuditOpen(true)}
+            title={t("Lịch sử thao tác")}
+          >
             📜
           </Button>
 
-          <Button size="sm" variant="ghost" onClick={() => setSettingsOpen(true)} title="Cài đặt">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSettingsOpen(true)}
+            title={t("Cài đặt")}
+          >
             ⚙
           </Button>
         </div>
@@ -216,13 +252,15 @@ export function TopBar({
                 Impersonating
               </Badge>
               <span className="mono">{auth.data.impersonating}</span>
-              <span className="text-[var(--ink-muted)]">(đăng nhập: {auth.data.account})</span>
+              <span className="text-[var(--ink-muted)]">
+                {t("(đăng nhập: {account})", { account: auth.data.account })}
+              </span>
             </span>
           )}
           {caps.data && caps.data.missing.length > 0 && (
             <details>
               <summary className="cursor-pointer text-[var(--ink-secondary)]">
-                Thiếu {caps.data.missing.length} nhóm quyền trên project này
+                {t("Thiếu {n} nhóm quyền trên project này", { n: caps.data.missing.length })}
               </summary>
               <ul className="mt-1 list-disc pl-5">
                 {caps.data.missing.map((m) => (
@@ -271,6 +309,8 @@ function SettingsDialog({
   project: string | null;
   onSaved: (s: Settings) => void;
 }) {
+  const t = useT();
+  const { lang } = useI18n();
   const toast = useToast();
   const [auto, setAuto] = useState(String(settings.autoRefreshSeconds));
   const [poll, setPoll] = useState(String(settings.logPollSeconds));
@@ -284,11 +324,11 @@ function SettingsDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Cài đặt"
+      title={t("Cài đặt")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Đóng
+            {t("Đóng")}
           </Button>
           <Button
             variant="primary"
@@ -300,27 +340,54 @@ function SettingsDialog({
                   revealTimeoutSeconds: Number(reveal) || 30,
                 }),
               );
-              toast({ tone: "good", title: "Đã lưu cài đặt" });
+              toast({ tone: "good", title: t("Đã lưu cài đặt") });
               onClose();
             }}
           >
-            Lưu
+            {t("Lưu")}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
+        {/* Ngôn ngữ đứng đầu: người không đọc được tiếng Việt phải tìm thấy nó trước
+            khi phải hiểu bất kỳ mục nào khác trong màn này. Lưu ngay khi chọn, không
+            đợi bấm Lưu — đổi ngôn ngữ mà phải đọc tiếp tiếng Việt để tìm nút Lưu thì
+            hỏng mất mục đích. */}
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">Xác thực (Service Account)</h3>
+          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Ngôn ngữ")}</h3>
+          <div className="flex items-center gap-2">
+            <Select
+              value={lang}
+              aria-label={t("Ngôn ngữ")}
+              onChange={async (e) => {
+                const next = e.target.value as Language;
+                onSaved(await api.setPreferences({ language: next }));
+              }}
+            >
+              {(Object.keys(LANGUAGE_NAMES) as Language[]).map((l) => (
+                <option key={l} value={l}>
+                  {LANGUAGE_NAMES[l]}
+                </option>
+              ))}
+            </Select>
+            <span className="text-[11px] text-[var(--ink-muted)]">
+              {t("Message lỗi từ GCP vẫn hiện bằng tiếng Việt.")}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Xác thực (Service Account)")}</h3>
           <CredentialPanel allowedProjects={settings.allowedProjects} />
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">Project được phép thao tác</h3>
+          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Project được phép thao tác")}</h3>
           <p className="mb-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-            Khi <strong>khoá</strong>, app chỉ cho phép thao tác trên đúng những project trong danh
-            sách — chặn ở tầng Rust, không chỉ ẩn dropdown. Đây là lớp bảo vệ để app không đụng
-            nhầm project production hay staging. Nhiều project cách nhau bằng dấu phẩy.
+            {t(
+              "Khi khoá, app chỉ cho phép thao tác trên đúng những project trong danh sách — chặn ở tầng Rust, không chỉ ẩn dropdown. Đây là lớp bảo vệ để app không đụng nhầm project production hay staging. Nhiều project cách nhau bằng dấu phẩy.",
+            )}
           </p>
           <div className="flex items-center gap-2">
             <Input
@@ -332,15 +399,21 @@ function SettingsDialog({
             <Toggle
               checked={settings.projectLock}
               tone="warn"
-              hint={settings.projectLock ? "Đang khoá — chỉ project trong danh sách" : "Đang mở — mọi project"}
-              label={settings.projectLock ? "🔒 Đang khoá" : "🔓 Đang mở"}
+              hint={
+                settings.projectLock
+                  ? t("Đang khoá — chỉ project trong danh sách")
+                  : t("Đang mở — mọi project")
+              }
+              label={settings.projectLock ? t("🔒 Đang khoá") : t("🔓 Đang mở")}
               onChange={async (v) => {
                 const projects = allowedText.split(",").map((s) => s.trim()).filter(Boolean);
                 onSaved(await apiV2.setAllowedProjects(projects, v));
                 toast({
                   tone: v ? "good" : "warning",
-                  title: v ? "Đã khoá vào danh sách project" : "Đã mở khoá project",
-                  body: v ? `Chỉ còn thao tác được trên: ${projects.join(", ")}` : "App có thể thao tác trên mọi project — cẩn thận với prod.",
+                  title: v ? t("Đã khoá vào danh sách project") : t("Đã mở khoá project"),
+                  body: v
+                    ? t("Chỉ còn thao tác được trên: {list}", { list: projects.join(", ") })
+                    : t("App có thể thao tác trên mọi project — cẩn thận với prod."),
                 });
               }}
             />
@@ -352,41 +425,48 @@ function SettingsDialog({
                 try {
                   const projects = allowedText.split(",").map((s) => s.trim()).filter(Boolean);
                   onSaved(await apiV2.setAllowedProjects(projects, settings.projectLock));
-                  toast({ tone: "good", title: "Đã lưu danh sách project được phép" });
+                  toast({ tone: "good", title: t("Đã lưu danh sách project được phép") });
                 } catch (e) {
                   const err = e as { message?: string };
-                  toast({ tone: "critical", title: "Không lưu được", body: err.message });
+                  toast({ tone: "critical", title: t("Không lưu được"), body: err.message });
                 } finally {
                   setSavingAllow(false);
                 }
               }}
             >
-              Lưu danh sách
+              {t("Lưu danh sách")}
             </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Auto refresh (giây)" hint="0 = tắt. Dưới 10s sẽ bị kẹp lên 10s.">
+          <Field
+            label={t("Auto refresh (giây)")}
+            hint={t("0 = tắt. Dưới 10s sẽ bị kẹp lên 10s.")}
+          >
             <Input value={auto} onChange={(e) => setAuto(e.target.value)} inputMode="numeric" />
           </Field>
-          <Field label="Nhịp poll log (giây)" hint="REST không có streaming thật, log lấy bằng polling.">
+          <Field
+            label={t("Nhịp poll log (giây)")}
+            hint={t("REST không có streaming thật, log lấy bằng polling.")}
+          >
             <Input value={poll} onChange={(e) => setPoll(e.target.value)} inputMode="numeric" />
           </Field>
-          <Field label="Tự ẩn secret sau (giây)">
+          <Field label={t("Tự ẩn secret sau (giây)")}>
             <Input value={reveal} onChange={(e) => setReveal(e.target.value)} inputMode="numeric" />
           </Field>
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">Nhãn môi trường</h3>
+          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Nhãn môi trường")}</h3>
           <p className="mb-2 text-[11px] text-[var(--ink-muted)]">
-            Project nhãn <strong>Production</strong> hoặc <strong>chưa gắn nhãn</strong> yêu cầu gõ đúng
-            tên service trước khi ghi. Gắn nhãn Dev cho project thử nghiệm để khỏi phải gõ mỗi lần.
+            {t(
+              "Project nhãn Production hoặc chưa gắn nhãn yêu cầu gõ đúng tên service trước khi ghi. Gắn nhãn Dev cho project thử nghiệm để khỏi phải gõ mỗi lần.",
+            )}
           </p>
           <div className="flex flex-col gap-1">
             {Object.entries(settings.projectLabels).length === 0 && (
-              <p className="text-[11px] text-[var(--ink-muted)]">Chưa gắn nhãn project nào.</p>
+              <p className="text-[11px] text-[var(--ink-muted)]">{t("Chưa gắn nhãn project nào.")}</p>
             )}
             {Object.entries(settings.projectLabels).map(([p, l]) => (
               <div key={p} className="flex items-center gap-2">
@@ -396,10 +476,10 @@ function SettingsDialog({
                   value={l}
                   onChange={async (e) => onSaved(await api.setProjectLabel(p, e.target.value as EnvLabel))}
                 >
-                  <option value="dev">Dev</option>
-                  <option value="staging">Staging</option>
-                  <option value="prod">Production</option>
-                  <option value="unknown">Chưa gắn nhãn</option>
+                  <option value="dev">{t("Dev")}</option>
+                  <option value="staging">{t("Staging")}</option>
+                  <option value="prod">{t("Production")}</option>
+                  <option value="unknown">{t("Chưa gắn nhãn")}</option>
                 </Select>
               </div>
             ))}
@@ -407,10 +487,11 @@ function SettingsDialog({
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">Kiểm tra tên metric</h3>
+          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Kiểm tra tên metric")}</h3>
           <p className="mb-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-            Monitoring API không báo lỗi khi tên metric sai — nó trả về series rỗng. Chart phẳng ở 0 khi
-            đó sẽ bị đọc thành “service không có tải”. Chạy kiểm tra này khi thêm project mới.
+            {t(
+              "Monitoring API không báo lỗi khi tên metric sai — nó trả về series rỗng. Chart phẳng ở 0 khi đó sẽ bị đọc thành “service không có tải”. Chạy kiểm tra này khi thêm project mới.",
+            )}
           </p>
           <Button
             size="sm"
@@ -425,31 +506,35 @@ function SettingsDialog({
                 toast({
                   tone: missing.length ? "warning" : "good",
                   title: missing.length
-                    ? `${missing.length}/${res.length} metric không tìm thấy`
-                    : `Cả ${res.length} metric đều tồn tại trên project này`,
+                    ? t("{missing}/{total} metric không tìm thấy", {
+                        missing: missing.length,
+                        total: res.length,
+                      })
+                    : t("Cả {total} metric đều tồn tại trên project này", { total: res.length }),
                   body: missing.length ? missing.map((m) => m.metric).join("\n") : undefined,
                 });
               } catch (e) {
                 const err = e as { message?: string };
-                toast({ tone: "critical", title: "Không kiểm tra được", body: err.message });
+                toast({ tone: "critical", title: t("Không kiểm tra được"), body: err.message });
               } finally {
                 setVerifying(false);
               }
             }}
           >
-            Đối chiếu với metricDescriptors
+            {t("Đối chiếu với metricDescriptors")}
           </Button>
         </div>
 
         <div>
           <h3 className="mb-1.5 text-[12px] font-semibold">Audit log</h3>
           <p className="mb-2 text-[11px] text-[var(--ink-muted)]">
-            Mọi thao tác ghi và mọi lần xem giá trị secret được ghi vào file JSONL trên máy (không chứa
-            giá trị secret).
+            {t(
+              "Mọi thao tác ghi và mọi lần xem giá trị secret được ghi vào file JSONL trên máy (không chứa giá trị secret).",
+            )}
           </p>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={async () => setAuditFile(await api.auditPath())}>
-              Hiện đường dẫn file
+              {t("Hiện đường dẫn file")}
             </Button>
             {auditFile && <code className="selectable mono text-[11px]">{auditFile}</code>}
           </div>
@@ -468,14 +553,15 @@ const ACTION_TEXT: Record<string, string> = {
 };
 
 function AuditDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
   const q = useAuditTail(open);
 
   return (
-    <Dialog open={open} onClose={onClose} title="Lịch sử thao tác trên máy này" width={860}>
+    <Dialog open={open} onClose={onClose} title={t("Lịch sử thao tác trên máy này")} width={860}>
       {q.isLoading && <Loading />}
       <ErrorBox error={q.error} />
       {q.data && q.data.length === 0 && (
-        <Notice tone="info">Chưa có thao tác nào được ghi lại.</Notice>
+        <Notice tone="info">{t("Chưa có thao tác nào được ghi lại.")}</Notice>
       )}
       {q.data && q.data.length > 0 && (
         <div className="flex flex-col gap-1.5">
@@ -486,7 +572,9 @@ function AuditDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
             return (
               <div key={i} className="rounded border px-2.5 py-2 text-[11px]">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={tone}>{ACTION_TEXT[String(r["action"])] ?? String(r["action"])}</Badge>
+                  <Badge tone={tone}>
+                    {t(ACTION_TEXT[String(r["action"])] ?? String(r["action"]))}
+                  </Badge>
                   <span className="mono">{String(r["project"] ?? "")}</span>
                   {r["service"] ? <span className="mono">/{String(r["service"])}</span> : null}
                   <span className="ml-auto text-[var(--ink-muted)]">{String(r["ts"] ?? "")}</span>
@@ -513,8 +601,10 @@ function AuditDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
         <KeyValue
           items={[
             [
-              "Lưu ý",
-              "Đây là log cục bộ để tra nhanh. Nguồn chuẩn cho audit vẫn là Cloud Audit Logs trên GCP.",
+              t("Lưu ý"),
+              t(
+                "Đây là log cục bộ để tra nhanh. Nguồn chuẩn cho audit vẫn là Cloud Audit Logs trên GCP.",
+              ),
             ],
           ]}
         />

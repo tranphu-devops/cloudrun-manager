@@ -8,7 +8,7 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::audit::{Action, Outcome};
-use crate::config::{EnvLabel, Settings};
+use crate::config::{EnvLabel, Language, Settings};
 use crate::error::CmdError;
 use crate::state::AppState;
 
@@ -84,9 +84,13 @@ pub async fn set_preferences(
     log_poll_seconds: Option<u64>,
     reveal_timeout_seconds: Option<u64>,
     metrics_window_minutes: Option<i64>,
+    language: Option<Language>,
 ) -> R<Settings> {
     {
         let mut s = state.settings.write().await;
+        if let Some(v) = language {
+            s.language = v;
+        }
         if let Some(v) = auto_refresh_seconds {
             // 0 = tắt. Dưới 10s thì vô nghĩa vì cache đã 15–30s, chỉ tốn quota.
             s.auto_refresh_seconds = if v == 0 { 0 } else { v.clamp(10, 600) };

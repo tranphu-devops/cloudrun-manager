@@ -3,6 +3,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 
 import { Badge, Button, ErrorBox, Loading, Select, Tabs } from "../../components/ui";
 import { regionLabel } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 import { useRevisions, useService } from "../../lib/queries";
 import type { CapabilitiesResult, ProjectLoadSnapshot } from "../../lib/types";
 import { HealthDot } from "../service-list/Sidebar";
@@ -41,6 +42,7 @@ export function ServiceDetailPane({
   logPollSeconds: number;
   autoRefreshMs: number;
 }) {
+  const t = useT();
   const [tab, setTab] = useState<TabId>("overview");
   const [containerIndex, setContainerIndex] = useState(0);
 
@@ -55,7 +57,7 @@ export function ServiceDetailPane({
     setContainerIndex(0);
   }, [project, region, service]);
 
-  if (q.isLoading) return <Loading label={`Đang lấy ${service}…`} />;
+  if (q.isLoading) return <Loading label={t("Đang lấy {service}…", { service })} />;
 
   if (q.error) {
     return (
@@ -78,16 +80,18 @@ export function ServiceDetailPane({
             <HealthDot health={s.health} message={s.healthMessage} />
             <span className="truncate">{s.name}</span>
             {s.trafficPinned && (
-              <Badge tone="warning" icon="📌" title="Traffic ghim vào revision cụ thể">
-                traffic ghim
+              <Badge tone="warning" icon="📌" title={t("Traffic ghim vào revision cụ thể")}>
+                {t("traffic ghim")}
               </Badge>
             )}
-            {q.isFetching && <span className="text-[11px] text-[var(--ink-muted)]">cập nhật…</span>}
+            {q.isFetching && (
+              <span className="text-[11px] text-[var(--ink-muted)]">{t("cập nhật…")}</span>
+            )}
           </h1>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--ink-muted)]">
             <span>{regionLabel(s.region)}</span>
             <span>·</span>
-            <span className="mono">{s.latestReadyRevision ?? "chưa có revision ready"}</span>
+            <span className="mono">{s.latestReadyRevision ?? t("chưa có revision ready")}</span>
             {s.uri && (
               <>
                 <span>·</span>
@@ -108,8 +112,8 @@ export function ServiceDetailPane({
             <Select
               value={String(containerIndex)}
               onChange={(e) => setContainerIndex(Number(e.target.value))}
-              aria-label="Container"
-              title="Service này có nhiều container (sidecar)"
+              aria-label={t("Container")}
+              title={t("Service này có nhiều container (sidecar)")}
             >
               {d.containers.map((c) => (
                 <option key={c.index} value={c.index}>
@@ -128,7 +132,7 @@ export function ServiceDetailPane({
         value={tab}
         onChange={setTab}
         tabs={[
-          { id: "overview", label: "Tổng quan" },
+          { id: "overview", label: t("Tổng quan") },
           {
             id: "env",
             label: "Env",
@@ -141,7 +145,7 @@ export function ServiceDetailPane({
           },
           { id: "scaling", label: "Scaling" },
           { id: "secrets", label: "Secrets" },
-          { id: "metrics", label: "Tải" },
+          { id: "metrics", label: t("Tải") },
           { id: "logs", label: "Log" },
           { id: "revisions", label: "Revisions" },
         ]}

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { StatTile } from "../../components/charts";
 import { Badge, Button, Card, EmptyState, ErrorBox, Input, Loading, Notice, Select } from "../../components/ui";
 import { num, regionLabel } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 import { apiV2 } from "../../lib/ipc";
 import type { CmdError, CostReport, CostRow } from "../../lib/types";
 
@@ -35,6 +36,7 @@ function money(v: number): string {
 type SortKey = "cost" | "cpu" | "name";
 
 export function BillingPage({ project }: { project: string }) {
+  const t = useT();
   const [sortBy, setSortBy] = useState<SortKey>("cost");
   const [filter, setFilter] = useState("");
   const [kindFilter, setKindFilter] = useState<"all" | "service" | "job">("all");
@@ -68,7 +70,7 @@ export function BillingPage({ project }: { project: string }) {
 
   const report = q.data;
 
-  if (q.isLoading) return <Loading label="Đang ước lượng chi phí từ metric tải…" />;
+  if (q.isLoading) return <Loading label={t("Đang ước lượng chi phí từ metric tải…")} />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
@@ -76,9 +78,10 @@ export function BillingPage({ project }: { project: string }) {
 
       {/* Nhãn "ước lượng" đặt cao nhất, trước cả số — để không ai đọc con số mà quên nó là ước lượng. */}
       <Notice tone="warning" icon="≈">
-        <strong>Đây là ước lượng, không phải hoá đơn.</strong> Con số suy từ metric tải × đơn giá công
-        khai của Cloud Run, chưa gồm committed-use discount, network egress, hay chi phí service khác
-        (Cloud SQL, Secret Manager…). Đối chiếu số thật ở{" "}
+        <strong>{t("Đây là ước lượng, không phải hoá đơn.")}</strong>{" "}
+        {t(
+          "Con số suy từ metric tải × đơn giá công khai của Cloud Run, chưa gồm committed-use discount, network egress, hay chi phí service khác (Cloud SQL, Secret Manager…). Đối chiếu số thật ở",
+        )}{" "}
         <a
           className="underline"
           href={`https://console.cloud.google.com/billing/linkedaccount?project=${encodeURIComponent(project)}`}
@@ -92,23 +95,39 @@ export function BillingPage({ project }: { project: string }) {
 
       {report?.usageUnavailable && (
         <Notice tone="critical" icon="⚠">
-          Không lấy được metric tải cho project này (thiếu quyền Monitoring hoặc chưa bật API). Con số
-          bên dưới suy từ cấu hình min-instances và giả định tải mặc định — sai lệch lớn hơn bình
-          thường. {report.note}
+          {t(
+            "Không lấy được metric tải cho project này (thiếu quyền Monitoring hoặc chưa bật API). Con số bên dưới suy từ cấu hình min-instances và giả định tải mặc định — sai lệch lớn hơn bình thường.",
+          )}{" "}
+          {report.note}
         </Notice>
       )}
 
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <StatTile label="Ước lượng / ngày" value={money(report?.totalPerDay ?? 0)} tone="warning" icon="≈" />
-        <StatTile label="Ước lượng / tháng" value={money(report?.totalPerMonth ?? 0)} tone="warning" icon="≈" sub="× 30 ngày" />
         <StatTile
-          label="Free tier bù được"
+          label={t("Ước lượng / ngày")}
+          value={money(report?.totalPerDay ?? 0)}
+          tone="warning"
+          icon="≈"
+        />
+        <StatTile
+          label={t("Ước lượng / tháng")}
+          value={money(report?.totalPerMonth ?? 0)}
+          tone="warning"
+          icon="≈"
+          sub={t("× 30 ngày")}
+        />
+        <StatTile
+          label={t("Free tier bù được")}
           value={report ? `−${money(report.freeTier.maxSaving).replace("$", "$")}` : "–"}
           tone="good"
           icon="✓"
-          sub="đã trừ khỏi số trên"
+          sub={t("đã trừ khỏi số trên")}
         />
-        <StatTile label="Dòng chi phí" value={num(report?.rows.length ?? 0)} sub="service + job" />
+        <StatTile
+          label={t("Dòng chi phí")}
+          value={num(report?.rows.length ?? 0)}
+          sub={t("service + job")}
+        />
       </div>
 
       {report && report.warnings.length > 0 && (
@@ -121,21 +140,24 @@ export function BillingPage({ project }: { project: string }) {
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="tìm theo tên, region…"
+          placeholder={t("tìm theo tên, region…")}
           className="w-64"
         />
         <Select value={kindFilter} onChange={(e) => setKindFilter(e.target.value as typeof kindFilter)}>
-          <option value="all">Tất cả</option>
-          <option value="service">Chỉ service</option>
-          <option value="job">Chỉ job</option>
+          <option value="all">{t("Tất cả")}</option>
+          <option value="service">{t("Chỉ service")}</option>
+          <option value="job">{t("Chỉ job")}</option>
         </Select>
         <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}>
-          <option value="cost">Sắp xếp: chi phí ước lượng</option>
-          <option value="cpu">Sắp xếp: vCPU-giây</option>
-          <option value="name">Sắp xếp: tên</option>
+          <option value="cost">{t("Sắp xếp: chi phí ước lượng")}</option>
+          <option value="cpu">{t("Sắp xếp: vCPU-giây")}</option>
+          <option value="name">{t("Sắp xếp: tên")}</option>
         </Select>
         <span className="text-[11px] text-[var(--ink-muted)]">
-          {rows.length} dòng · cửa sổ {report?.windowMinutes ?? "–"} phút
+          {t("{n} dòng · cửa sổ {win} phút", {
+            n: rows.length,
+            win: report?.windowMinutes ?? "–",
+          })}
         </span>
         <Button size="sm" variant="ghost" className="ml-auto" loading={q.isFetching} onClick={() => void q.refetch()}>
           ⟳ Reload
@@ -143,20 +165,20 @@ export function BillingPage({ project }: { project: string }) {
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState icon="₫" title="Không có dòng chi phí nào khớp" />
+        <EmptyState icon="₫" title={t("Không có dòng chi phí nào khớp")} />
       ) : (
         <div className="overflow-x-auto rounded-lg border" style={{ background: "var(--surface-1)" }}>
           <table className="w-full text-[11px]">
             <thead style={{ background: "var(--surface-2)" }}>
               <tr className="text-left">
-                <th className="px-2 py-1.5 font-medium">Tên</th>
-                <th className="px-2 py-1.5 font-medium">Kiểu tính tiền</th>
-                <th className="px-2 py-1.5 font-medium">Resource</th>
+                <th className="px-2 py-1.5 font-medium">{t("Tên")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Kiểu tính tiền")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Resource")}</th>
                 <th className="tnum px-2 py-1.5 text-right font-medium">CPU (≈)</th>
                 <th className="tnum px-2 py-1.5 text-right font-medium">RAM (≈)</th>
                 <th className="tnum px-2 py-1.5 text-right font-medium">Request (≈)</th>
-                <th className="tnum px-2 py-1.5 text-right font-medium">Tổng ≈/ngày</th>
-                <th className="px-2 py-1.5 font-medium">Vì sao tốn</th>
+                <th className="tnum px-2 py-1.5 text-right font-medium">{t("Tổng ≈/ngày")}</th>
+                <th className="px-2 py-1.5 font-medium">{t("Vì sao tốn")}</th>
               </tr>
             </thead>
             <tbody>
@@ -170,7 +192,11 @@ export function BillingPage({ project }: { project: string }) {
 
       {/* Bảy nguồn sai số — bắt buộc hiện trên UI, không cất trong doc. */}
       {report && (
-        <Card title={`Bảy nguồn sai số của ước lượng này (${report.errorSources.length})`}>
+        <Card
+          title={t("Bảy nguồn sai số của ước lượng này ({count})", {
+            count: report.errorSources.length,
+          })}
+        >
           <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[12px] leading-relaxed">
             {report.errorSources.map((s, i) => (
               <li key={i} className="selectable">
@@ -185,6 +211,7 @@ export function BillingPage({ project }: { project: string }) {
 }
 
 function CostRowView({ r }: { r: CostRow }) {
+  const t = useT();
   const instanceBased = r.mode === "instanceBased";
   return (
     <tr className="border-t align-top hover:bg-[var(--surface-2)]">
@@ -200,8 +227,8 @@ function CostRowView({ r }: { r: CostRow }) {
           tone={instanceBased ? "warning" : "good"}
           title={
             instanceBased
-              ? "Instance-based: tính CPU cả khi rảnh, đơn giá CPU cao hơn ~10 lần"
-              : "Request-based: chỉ tính CPU khi xử lý request (cpuIdle=true)"
+              ? t("Instance-based: tính CPU cả khi rảnh, đơn giá CPU cao hơn ~10 lần")
+              : t("Request-based: chỉ tính CPU khi xử lý request (cpuIdle=true)")
           }
         >
           {r.modeLabel}

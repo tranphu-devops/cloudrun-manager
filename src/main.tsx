@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import App from "./App";
+import { LanguageGate } from "./components/LanguageGate";
 import { ToastHost } from "./components/ui";
 import "./styles.css";
 
@@ -24,9 +25,11 @@ if (!root) throw new Error("không tìm thấy #root");
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ToastHost>
-        <App />
-      </ToastHost>
+      <LanguageGate>
+        <ToastHost>
+          <App />
+        </ToastHost>
+      </LanguageGate>
     </QueryClientProvider>
   </StrictMode>,
 );

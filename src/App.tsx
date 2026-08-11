@@ -12,6 +12,7 @@ import { ServiceDetailPane } from "./features/service-detail/ServiceDetail";
 import { Sidebar } from "./features/service-list/Sidebar";
 import { StatisticsPage } from "./features/statistics/StatisticsPage";
 import { UnlockScreen } from "./features/vault/UnlockScreen";
+import { useT } from "./lib/i18n";
 import { api, apiV2 } from "./lib/ipc";
 import {
   keys,
@@ -45,6 +46,7 @@ function inferLabel(projectId: string): EnvLabel {
 }
 
 export default function App() {
+  const t = useT();
   const qc = useQueryClient();
   const auth = useAuth();
   const settingsQ = useSettings();
@@ -158,7 +160,7 @@ export default function App() {
   };
 
   if (settingsQ.isLoading) {
-    return <Loading label="Đang khởi động…" />;
+    return <Loading label={t("Đang khởi động…")} />;
   }
 
   if (!settings) {
@@ -207,11 +209,13 @@ export default function App() {
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon="☁"
-            title="Chọn một GCP project để bắt đầu"
+            title={t("Chọn một GCP project để bắt đầu")}
             hint={
               auth.data
-                ? `Đang đăng nhập với ${auth.data.impersonating ?? auth.data.account}. Chọn project ở thanh trên.`
-                : "Đang lấy thông tin xác thực từ gcloud…"
+                ? t("Đang đăng nhập với {account}. Chọn project ở thanh trên.", {
+                    account: auth.data.impersonating ?? auth.data.account,
+                  })
+                : t("Đang lấy thông tin xác thực từ gcloud…")
             }
           />
         </div>
@@ -251,24 +255,32 @@ export default function App() {
                       icon="◧"
                       title={
                         services.length > 0
-                          ? `${services.length} service trong ${project}`
-                          : `Không có Cloud Run service nào trong ${project}`
+                          ? t("{count} service trong {project}", {
+                              count: services.length,
+                              project,
+                            })
+                          : t("Không có Cloud Run service nào trong {project}", { project })
                       }
                       hint={
                         services.length > 0
-                          ? "Chọn một service ở cột bên trái, hoặc bấm Ctrl+K để nhảy nhanh."
-                          : "Kiểm tra lại project — hoặc region của service có thể chưa được Cloud Run Admin API trả về."
+                          ? t("Chọn một service ở cột bên trái, hoặc bấm Ctrl+K để nhảy nhanh.")
+                          : t(
+                              "Kiểm tra lại project — hoặc region của service có thể chưa được Cloud Run Admin API trả về.",
+                            )
                       }
                     />
                     {services.length > 0 && (
-                      <Button onClick={() => setPaletteOpen(true)}>Ctrl+K — nhảy tới service</Button>
+                      <Button onClick={() => setPaletteOpen(true)}>
+                        {t("Ctrl+K — nhảy tới service")}
+                      </Button>
                     )}
                     {label === "unknown" && (
                       <div className="max-w-xl">
                         <Notice tone="warning" icon="?">
-                          Project <strong>{project}</strong> chưa được gắn nhãn môi trường. App đang xử lý
-                          như production: mọi thao tác ghi sẽ yêu cầu gõ đúng tên service. Gắn nhãn ở thanh
-                          trên để bỏ bước đó trên project dev.
+                          {t("Project")} <strong>{project}</strong>{" "}
+                          {t(
+                            "chưa được gắn nhãn môi trường. App đang xử lý như production: mọi thao tác ghi sẽ yêu cầu gõ đúng tên service. Gắn nhãn ở thanh trên để bỏ bước đó trên project dev.",
+                          )}
                         </Notice>
                       </div>
                     )}

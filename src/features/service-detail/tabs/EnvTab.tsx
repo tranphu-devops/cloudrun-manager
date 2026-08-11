@@ -10,6 +10,7 @@ import {
   Select,
   useToast,
 } from "../../../components/ui";
+import { useT } from "../../../lib/i18n";
 import { api, asCmdError } from "../../../lib/ipc";
 import { useInvalidateService, useSecrets } from "../../../lib/queries";
 import type {
@@ -48,6 +49,7 @@ export function EnvTab({
   readOnly: boolean;
   requiresTypedConfirm: boolean;
 }) {
+  const t = useT();
   const toast = useToast();
   const invalidate = useInvalidateService();
   const container = detail.containers[containerIndex];
@@ -113,8 +115,8 @@ export function EnvTab({
         toast({
           tone: r.outcome.message.includes("KHÔNG khởi động được") ? "critical" : "good",
           title: r.outcome.message.includes("KHÔNG khởi động được")
-            ? `Revision mới của ${service} không khởi động được`
-            : `Đã cập nhật env của ${service}`,
+            ? t("Revision mới của {service} không khởi động được", { service })
+            : t("Đã cập nhật env của {service}", { service }),
           body: r.outcome.message,
         });
       }
@@ -126,29 +128,36 @@ export function EnvTab({
   };
 
   if (!container) {
-    return <Notice tone="critical">Không tìm thấy container index {containerIndex}.</Notice>;
+    return (
+      <Notice tone="critical">
+        {t("Không tìm thấy container index {index}.", { index: containerIndex })}
+      </Notice>
+    );
   }
 
   return (
     <div className="flex flex-col gap-3">
       {detail.summary.trafficPinned && (
         <Notice tone="warning" icon="📌">
-          Traffic của service này đang được ghim vào revision cụ thể. Sửa env sẽ tạo revision mới
-          nhưng revision đó <strong>sẽ không nhận traffic</strong> — thay đổi không có tác dụng cho
-          tới khi bạn chuyển traffic (làm trên GCP Console; app v1 chưa sửa traffic).
+          {t(
+            "Traffic của service này đang được ghim vào revision cụ thể. Sửa env sẽ tạo revision mới nhưng revision đó sẽ không nhận traffic — thay đổi không có tác dụng cho tới khi bạn chuyển traffic (làm trên GCP Console; app này không sửa traffic).",
+          )}
         </Notice>
       )}
 
       <div className="flex items-center gap-2">
         <h2 className="text-[13px] font-semibold">
-          Biến môi trường
+          {t("Biến môi trường")}
           <span className="ml-1.5 font-normal text-[var(--ink-muted)]">
-            {draft.length} biến · {draft.filter((e) => e.kind === "secretRef").length} từ secret
+            {t("{total} biến · {secret} từ secret", {
+              total: draft.length,
+              secret: draft.filter((e) => e.kind === "secretRef").length,
+            })}
           </span>
         </h2>
         {dirty && (
           <Badge tone="warning" icon="●">
-            có thay đổi chưa lưu
+            {t("có thay đổi chưa lưu")}
           </Badge>
         )}
 
@@ -162,15 +171,15 @@ export function EnvTab({
               ])
             }
           >
-            + Biến thường
+            {t("+ Biến thường")}
           </Button>
           <Button
             size="sm"
             disabled={!secrets.data || secrets.data.length === 0}
             title={
               secrets.data && secrets.data.length > 0
-                ? "Thêm biến lấy giá trị từ Secret Manager"
-                : "Không đọc được danh sách secret của project"
+                ? t("Thêm biến lấy giá trị từ Secret Manager")
+                : t("Không đọc được danh sách secret của project")
             }
             onClick={() =>
               setDraft((d) => [
@@ -185,13 +194,13 @@ export function EnvTab({
               ])
             }
           >
-            + Biến từ Secret
+            {t("+ Biến từ Secret")}
           </Button>
           <Button size="sm" variant="ghost" disabled={!dirty} onClick={() => setDraft(original)}>
-            Hoàn tác
+            {t("Hoàn tác")}
           </Button>
           <Button size="sm" variant="primary" disabled={!dirty} onClick={openDialog}>
-            Xem thay đổi & áp dụng
+            {t("Xem thay đổi & áp dụng")}
           </Button>
         </div>
       </div>
@@ -202,8 +211,8 @@ export function EnvTab({
         <table className="w-full text-[12px]">
           <thead style={{ background: "var(--surface-2)" }}>
             <tr className="text-left">
-              <th className="w-[30%] px-2 py-1.5 font-medium">Tên</th>
-              <th className="px-2 py-1.5 font-medium">Giá trị</th>
+              <th className="w-[30%] px-2 py-1.5 font-medium">{t("Tên")}</th>
+              <th className="px-2 py-1.5 font-medium">{t("Giá trị")}</th>
               <th className="w-[1%] px-2 py-1.5" />
             </tr>
           </thead>
@@ -211,7 +220,7 @@ export function EnvTab({
             {draft.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-2 py-6 text-center text-[var(--ink-muted)]">
-                  Service này không có biến môi trường nào.
+                  {t("Service này không có biến môi trường nào.")}
                 </td>
               </tr>
             )}
@@ -228,7 +237,7 @@ export function EnvTab({
                       value={e.name}
                       spellCheck={false}
                       autoComplete="off"
-                      placeholder="TÊN_BIẾN"
+                      placeholder={t("TÊN_BIẾN")}
                       onChange={(ev) => set(i, { name: ev.target.value })}
                     />
                   </td>
@@ -284,9 +293,9 @@ export function EnvTab({
                     <Button
                       size="sm"
                       variant="ghost"
-                      title="Xoá biến này"
+                      title={t("Xoá biến này")}
                       onClick={() => remove(i)}
-                      aria-label={`Xoá ${e.name}`}
+                      aria-label={t("Xoá {name}", { name: e.name })}
                     >
                       ✕
                     </Button>
@@ -299,16 +308,18 @@ export function EnvTab({
       </div>
 
       <p className="text-[11px] leading-relaxed text-[var(--ink-muted)]">
-        Biến đánh dấu 🔑 lấy giá trị từ Secret Manager. Giá trị của chúng không đi qua app này ở tab
-        Env — muốn xem thì sang tab Secrets và bấm reveal. <code className="mono">PORT</code>,{" "}
-        <code className="mono">K_SERVICE</code>, <code className="mono">K_REVISION</code>,{" "}
-        <code className="mono">K_CONFIGURATION</code> do Cloud Run tự quản, không đặt tay được.
+        {t(
+          "Biến đánh dấu 🔑 lấy giá trị từ Secret Manager. Giá trị của chúng không đi qua app này ở tab Env — muốn xem thì sang tab Secrets và bấm reveal.",
+        )}{" "}
+        <code className="mono">PORT</code>, <code className="mono">K_SERVICE</code>,{" "}
+        <code className="mono">K_REVISION</code>, <code className="mono">K_CONFIGURATION</code>{" "}
+        {t("do Cloud Run tự quản, không đặt tay được.")}
       </p>
 
       <ApplyDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        title={`Áp dụng thay đổi env — ${service}`}
+        title={t("Áp dụng thay đổi env — {service}", { service })}
         serviceName={service}
         requiresTypedConfirm={requiresTypedConfirm}
         preview={preview}

@@ -2,7 +2,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 import { Badge, Button, ErrorBox, Input, Loading, Select, Toggle } from "../../../components/ui";
-import { cn, dateTime, ms, SEVERITY_ORDER } from "../../../lib/format";
+import { cn, dateTime, ms, num, SEVERITY_ORDER } from "../../../lib/format";
+import { useT } from "../../../lib/i18n";
 import { api, asCmdError } from "../../../lib/ipc";
 import type { CmdError, LogEntry, RevisionInfo } from "../../../lib/types";
 
@@ -43,6 +44,7 @@ export function LogsTab({
   revisions: RevisionInfo[];
   pollSeconds: number;
 }) {
+  const t = useT();
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [error, setError] = useState<CmdError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -116,22 +118,30 @@ export function LogsTab({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={severity} onChange={(e) => setSeverity(e.target.value)} aria-label="Mức độ">
+        <Select
+          value={severity}
+          onChange={(e) => setSeverity(e.target.value)}
+          aria-label={t("Mức độ")}
+        >
           {SEVERITY_ORDER.map((s) => (
             <option key={s} value={s}>
-              {s === "DEFAULT" ? "Mọi mức độ" : `≥ ${s}`}
+              {s === "DEFAULT" ? t("Mọi mức độ") : `≥ ${s}`}
             </option>
           ))}
         </Select>
 
-        <Select value={stream} onChange={(e) => setStream(e.target.value)} aria-label="Loại log">
-          <option value="all">Tất cả log</option>
-          <option value="request">Chỉ request log</option>
-          <option value="app">Chỉ app log (stdout/stderr)</option>
+        <Select
+          value={stream}
+          onChange={(e) => setStream(e.target.value)}
+          aria-label={t("Loại log")}
+        >
+          <option value="all">{t("Tất cả log")}</option>
+          <option value="request">{t("Chỉ request log")}</option>
+          <option value="app">{t("Chỉ app log (stdout/stderr)")}</option>
         </Select>
 
-        <Select value={revision} onChange={(e) => setRevision(e.target.value)} aria-label="Revision">
-          <option value="">Mọi revision</option>
+        <Select value={revision} onChange={(e) => setRevision(e.target.value)} aria-label={t("Revision")}>
+          <option value="">{t("Mọi revision")}</option>
           {revisions.map((r) => (
             <option key={r.name} value={r.name}>
               {r.name}
@@ -140,12 +150,16 @@ export function LogsTab({
           ))}
         </Select>
 
-        <Select value={String(minutes)} onChange={(e) => setMinutes(Number(e.target.value))} aria-label="Khoảng thời gian">
-          <option value="15">15 phút</option>
-          <option value="60">1 giờ</option>
-          <option value="360">6 giờ</option>
-          <option value="1440">24 giờ</option>
-          <option value="10080">7 ngày</option>
+        <Select
+          value={String(minutes)}
+          onChange={(e) => setMinutes(Number(e.target.value))}
+          aria-label={t("Khoảng thời gian")}
+        >
+          <option value="15">{t("15 phút")}</option>
+          <option value="60">{t("1 giờ")}</option>
+          <option value="360">{t("6 giờ")}</option>
+          <option value="1440">{t("24 giờ")}</option>
+          <option value="10080">{t("7 ngày")}</option>
         </Select>
 
         <form
@@ -158,11 +172,11 @@ export function LogsTab({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="tìm trong log…"
+            placeholder={t("tìm trong log…")}
             className="w-48"
           />
           <Button size="sm" type="submit">
-            Tìm
+            {t("Tìm")}
           </Button>
         </form>
 
@@ -170,8 +184,13 @@ export function LogsTab({
           <Toggle
             checked={live}
             onChange={setLive}
-            label={live ? `⏸ Đang theo dõi (${pollSeconds}s)` : "▶ Theo dõi"}
-            hint={`REST API của Cloud Logging không có streaming thật — app hỏi lại mỗi ${pollSeconds} giây.`}
+            label={
+              live ? t("⏸ Đang theo dõi ({sec}s)", { sec: pollSeconds }) : t("▶ Theo dõi")
+            }
+            hint={t(
+              "REST API của Cloud Logging không có streaming thật — app hỏi lại mỗi {sec} giây.",
+              { sec: pollSeconds },
+            )}
           />
           <Button size="sm" variant="ghost" loading={loading} onClick={() => void load("replace")}>
             ⟳
@@ -180,7 +199,7 @@ export function LogsTab({
             size="sm"
             variant="ghost"
             onClick={async () => openUrl(await api.logExplorerUrl(project, region, service))}
-            title="Mở Log Explorer với đúng filter service/region"
+            title={t("Mở Log Explorer với đúng filter service/region")}
           >
             Log Explorer ↗
           </Button>
@@ -193,10 +212,10 @@ export function LogsTab({
         className="min-h-0 flex-1 overflow-auto rounded-lg border"
         style={{ background: "var(--surface-1)" }}
       >
-        {loading && entries.length === 0 && <Loading label="Đang lấy log…" />}
+        {loading && entries.length === 0 && <Loading label={t("Đang lấy log…")} />}
         {!loading && entries.length === 0 && !error && (
           <p className="p-4 text-center text-[12px] text-[var(--ink-muted)]">
-            Không có log nào khớp trong khoảng thời gian này.
+            {t("Không có log nào khớp trong khoảng thời gian này.")}
           </p>
         )}
 
@@ -268,15 +287,18 @@ export function LogsTab({
         {nextToken && (
           <div className="flex justify-center p-2">
             <Button size="sm" loading={loading} onClick={() => void load("more")}>
-              Tải thêm
+              {t("Tải thêm")}
             </Button>
           </div>
         )}
       </div>
 
       <p className="text-[10px] text-[var(--ink-muted)]">
-        Giữ tối đa {MAX_LINES.toLocaleString("vi-VN")} dòng trong bộ nhớ · bấm một dòng để xem JSON gốc
-        {entries.length > 0 && ` · đang hiển thị ${entries.length.toLocaleString("vi-VN")} dòng`}
+        {t("Giữ tối đa {max} dòng trong bộ nhớ · bấm một dòng để xem JSON gốc", {
+          max: num(MAX_LINES),
+        })}
+        {entries.length > 0 &&
+          t(" · đang hiển thị {n} dòng", { n: num(entries.length) })}
       </p>
     </div>
   );

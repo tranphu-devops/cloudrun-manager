@@ -11,10 +11,17 @@ App desktop Tauri 2 + React để vận hành Cloud Run trên GCP: xem service, 
 scaling, xem secret/log/tải/instance, đổi project. Công cụ vận hành nội bộ, chạy trên Windows
 là chính (macOS best-effort). Mã nguồn mở theo giấy phép MIT — xem `LICENSE`.
 
-**Ngôn ngữ:** doc có bản tiếng Anh (`*.md`) và tiếng Việt (`*.vi.md`); sửa một bên phải đồng
-bộ bên kia. Comment trong code, message lỗi, và text UI viết bằng **tiếng Việt**. Tên biến,
-tên hàm, tên file dùng tiếng Anh. Message lỗi phải nói được *phải làm gì tiếp*, không chỉ nói
-*cái gì sai* — xem `crates/gcp/src/error.rs` để thấy chuẩn.
+**Ngôn ngữ:**
+
+- **Doc** có bản tiếng Anh (`*.md`) và tiếng Việt (`*.vi.md`); sửa một bên phải đồng bộ bên kia.
+- **Comment trong code** viết tiếng Việt. Tên biến, tên hàm, tên file dùng tiếng Anh.
+- **Text UI** viết bằng tiếng Việt rồi dịch lúc render. Mọi chuỗi người dùng thấy đều đi qua
+  `t()` trong `src/lib/i18n.tsx`, mà **key chính là câu tiếng Việt** (kiểu gettext). Thêm bản
+  tiếng Anh vào `src/lib/locales/en.ts`. Thiếu key thì rơi về tiếng Việt chứ không ra chuỗi
+  rỗng — xem bất biến #19.
+- **Message lỗi sinh từ Rust** (`gcp::error`, cron lint, `CostReport.errorSources`) vẫn chỉ có
+  tiếng Việt. Chúng phải nói được *phải làm gì tiếp*, không chỉ nói *cái gì sai* — xem
+  `crates/gcp/src/error.rs` để thấy chuẩn.
 
 ## Vòng verify — chạy trước khi báo xong
 
@@ -67,6 +74,10 @@ src-tauri/src/
 src/                        React
   lib/types.ts              ★ mirror của crates/gcp/src/types.rs
   lib/ipc.ts                wrapper invoke (api + apiV2). Command snake_case, tham số camelCase.
+  lib/i18n.tsx              ★ t() + I18nProvider. Key = câu tiếng Việt (kiểu gettext).
+  lib/locales/en.ts         từ điển tiếng Anh. Thiếu key → rơi về tiếng Việt.
+  lib/format.ts             format số/ngày; giữ locale ở tầm module (xem header của file)
+  components/LanguageGate.tsx  đưa Settings.language xuống cây, nằm trên ToastHost
   components/NavRail.tsx    (v2) điều hướng dọc giữa 5 màn
   components/charts.tsx     chart + StatTile theo skill dataviz
   features/service-detail/tabs/  7 tab
@@ -217,6 +228,22 @@ nói rõ điều này. Đừng thêm nút "áp dụng" mà không thiết kế l
 `job.template.template.containers` (ExecutionTemplate bọc TaskTemplate) — KHÁC service chỉ có
 một lớp `template.containers`. `jobs::task_container` đọc đúng đường lồng này; đọc sai một lớp
 sẽ ra rỗng và tưởng job không có container.
+
+### 19. Thiếu bản dịch thì rơi về tiếng Việt, không bao giờ ra chuỗi rỗng
+
+Key của `t()` chính là câu tiếng Việt, nên chuỗi chưa dịch sẽ hiện tiếng Việt thay vì để trống
+hay `undefined`. Với công cụ vận hành thì điều này quan trọng: một cảnh báo hiện sai ngôn ngữ
+còn cứu được, một cảnh báo hiện ra khoảng trắng thì không.
+
+Hệ quả phải nhớ: **sửa câu tiếng Việt là làm mồ côi bản dịch của nó.** Đổi chữ thì sửa luôn key
+tương ứng trong `src/lib/locales/en.ts` trong cùng commit.
+
+Hai cạm bẫy máy móc, đều đã đụng một lần:
+
+- Trong `.map()` mà tham số callback tên là `t`, gọi `t()` sẽ trúng phần tử chứ không phải hàm
+  dịch. Đặt tên khác: `toast`, `tr`… (xem `ToastHost`, `OverviewTab`).
+- `useT()` là hook nên phải gọi **trước** mọi `return` sớm — `ErrorBox`, `TooltipCard`,
+  `JobDetailDialog` đều return sớm.
 
 ## Quy ước
 

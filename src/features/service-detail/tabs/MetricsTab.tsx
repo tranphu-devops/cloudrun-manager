@@ -1,5 +1,6 @@
 import { TimeChart } from "../../../components/charts";
 import { Card, ErrorBox, Loading, Notice, Select } from "../../../components/ui";
+import { useT } from "../../../lib/i18n";
 import { useCharts } from "../../../lib/queries";
 import type { ChartData } from "../../../lib/types";
 
@@ -26,10 +27,16 @@ export function MetricsTab({
   onMinutesChange: (m: number) => void;
   autoRefreshMs: number;
 }) {
+  const t = useT();
   const q = useCharts(project, region, service, minutes, true, autoRefreshMs);
 
   const align = q.data?.alignmentSeconds ?? 60;
-  const alignLabel = align >= 3600 ? `${align / 3600} giờ` : align >= 60 ? `${align / 60} phút` : `${align}s`;
+  const alignLabel =
+    align >= 3600
+      ? t("{n} giờ", { n: align / 3600 })
+      : align >= 60
+        ? t("{n} phút", { n: align / 60 })
+        : `${align}s`;
 
   return (
     <div className="flex flex-col gap-3">
@@ -38,38 +45,42 @@ export function MetricsTab({
         <Select
           value={String(minutes)}
           onChange={(e) => onMinutesChange(Number(e.target.value))}
-          aria-label="Khoảng thời gian"
+          aria-label={t("Khoảng thời gian")}
         >
           {WINDOWS.map((w) => (
             <option key={w.minutes} value={w.minutes}>
-              {w.label}
+              {t(w.label)}
             </option>
           ))}
         </Select>
         <span className="text-[11px] text-[var(--ink-muted)]">
-          mỗi điểm = {alignLabel}
-          {q.isFetching && " · đang cập nhật…"}
+          {t("mỗi điểm = {align}", { align: alignLabel })}
+          {q.isFetching && t(" · đang cập nhật…")}
         </span>
       </div>
 
       <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
-      {q.isLoading && <Loading label="Đang lấy metric…" />}
+      {q.isLoading && <Loading label={t("Đang lấy metric…")} />}
 
       {q.data && (
         <>
           {[q.data.instances, q.data.rps, q.data.cpu].every((c) => c.unavailable) && (
             <Notice tone="warning" icon="⚠">
-              Không lấy được metric nào. Thường là thiếu <strong>roles/monitoring.viewer</strong> trên
-              project, hoặc Monitoring API chưa được enable. Vào Cài đặt → “Đối chiếu với
-              metricDescriptors” để kiểm tra chính xác.
+              {t("Không lấy được metric nào. Thường là thiếu")}{" "}
+              <strong>roles/monitoring.viewer</strong>{" "}
+              {t(
+                "trên project, hoặc Monitoring API chưa được enable. Vào Cài đặt → “Đối chiếu với metricDescriptors” để kiểm tra chính xác.",
+              )}
             </Notice>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <Card>
               <TimeChart
-                title="Số instance"
-                hint="Tách theo trạng thái: instance idle vẫn tính tiền nếu bật CPU always-allocated."
+                title={t("Số instance")}
+                hint={t(
+                  "Tách theo trạng thái: instance idle vẫn tính tiền nếu bật CPU always-allocated.",
+                )}
                 data={q.data.instances}
                 windowMinutes={minutes}
               />
@@ -77,7 +88,7 @@ export function MetricsTab({
 
             <Card>
               <TimeChart
-                title="Request / giây"
+                title={t("Request / giây")}
                 data={q.data.rps}
                 windowMinutes={minutes}
               />
@@ -85,8 +96,8 @@ export function MetricsTab({
 
             <Card>
               <TimeChart
-                title="Request theo nhóm response code"
-                hint="Xếp lớp: tổng chiều cao là tổng request."
+                title={t("Request theo nhóm response code")}
+                hint={t("Xếp lớp: tổng chiều cao là tổng request.")}
                 data={q.data.byClass}
                 windowMinutes={minutes}
                 stacked
@@ -96,8 +107,8 @@ export function MetricsTab({
             <Card>
               {/* Ba percentile cùng đơn vị ms → một chart, một trục. Không bao giờ hai trục y. */}
               <TimeChart
-                title="Latency p50 / p95 / p99"
-                hint="Đơn vị ms."
+                title={t("Latency p50 / p95 / p99")}
+                hint={t("Đơn vị ms.")}
                 data={mergeLatency(q.data.latencyP50, q.data.latencyP95, q.data.latencyP99)}
                 windowMinutes={minutes}
               />
@@ -105,8 +116,8 @@ export function MetricsTab({
 
             <Card>
               <TimeChart
-                title="CPU & Memory utilization (p99)"
-                hint="Cùng đơn vị % nên dùng chung một trục."
+                title={t("CPU & Memory utilization (p99)")}
+                hint={t("Cùng đơn vị % nên dùng chung một trục.")}
                 data={mergeUtil(q.data.cpu, q.data.memory)}
                 windowMinutes={minutes}
                 yDomainMax={100}
@@ -115,8 +126,8 @@ export function MetricsTab({
 
             <Card>
               <TimeChart
-                title="Startup latency (p95)"
-                hint="Thời gian container khởi động — cold start. Đơn vị ms."
+                title={t("Startup latency (p95)")}
+                hint={t("Thời gian container khởi động — cold start. Đơn vị ms.")}
                 data={q.data.startup}
                 windowMinutes={minutes}
               />

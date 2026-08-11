@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { ApplyDialog } from "../../../components/ApplyDialog";
 import { Badge, Button, Card, Field, Input, Notice, Select, useToast } from "../../../components/ui";
+import { useT } from "../../../lib/i18n";
 import { api, asCmdError } from "../../../lib/ipc";
 import { useInvalidateService } from "../../../lib/queries";
 import type {
@@ -29,6 +30,7 @@ export function ScalingTab({
   readOnly: boolean;
   requiresTypedConfirm: boolean;
 }) {
+  const t = useT();
   const toast = useToast();
   const invalidate = useInvalidateService();
   const c = detail.containers[containerIndex];
@@ -121,7 +123,11 @@ export function ScalingTab({
       setResult(r);
       if (!validateOnly) {
         invalidate(project, s.region, s.name);
-        toast({ tone: "good", title: `Đã cập nhật scaling của ${s.name}`, body: r.outcome.message });
+        toast({
+          tone: "good",
+          title: t("Đã cập nhật scaling của {service}", { service: s.name }),
+          body: r.outcome.message,
+        });
       }
     } catch (e) {
       setApplyError(asCmdError(e));
@@ -134,15 +140,18 @@ export function ScalingTab({
     <div className="flex flex-col gap-3">
       {minNum > 0 && (
         <Notice tone="info" icon="💰">
-          Min instances = {minNum} nghĩa là luôn có {minNum} instance chạy và <strong>được tính tiền
-          24/7</strong>, kể cả khi không có request. Đây là cách đổi tiền lấy việc loại bỏ cold start.
+          {t(
+            "Min instances = {n} nghĩa là luôn có {n} instance chạy và được tính tiền 24/7, kể cả khi không có request. Đây là cách đổi tiền lấy việc loại bỏ cold start.",
+            { n: minNum },
+          )}
         </Notice>
       )}
 
       {!cpuIdle && (
         <Notice tone="warning" icon="💰">
-          “CPU luôn được cấp” tính tiền CPU cho toàn bộ thời gian instance tồn tại, không chỉ lúc xử
-          lý request. Chỉ cần bật khi app có việc chạy nền ngoài request (worker, cron trong process).
+          {t(
+            "“CPU luôn được cấp” tính tiền CPU cho toàn bộ thời gian instance tồn tại, không chỉ lúc xử lý request. Chỉ cần bật khi app có việc chạy nền ngoài request (worker, cron trong process).",
+          )}
         </Notice>
       )}
 
@@ -150,8 +159,12 @@ export function ScalingTab({
         <Card title="Scaling">
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="Min instances"
-              hint={minNum === 0 ? "0 = scale về 0 khi rảnh, có cold start" : "luôn chạy, tính tiền 24/7"}
+              label={t("Min instances")}
+              hint={
+                minNum === 0
+                  ? t("0 = scale về 0 khi rảnh, có cold start")
+                  : t("luôn chạy, tính tiền 24/7")
+              }
             >
               <Input
                 value={minI}
@@ -160,7 +173,7 @@ export function ScalingTab({
                 onChange={(e) => setMinI(e.target.value)}
               />
             </Field>
-            <Field label="Max instances" hint="chặn trên để không bị hoá đơn bất ngờ">
+            <Field label={t("Max instances")} hint={t("chặn trên để không bị hoá đơn bất ngờ")}>
               <Input
                 value={maxI}
                 inputMode="numeric"
@@ -168,10 +181,13 @@ export function ScalingTab({
                 onChange={(e) => setMaxI(e.target.value)}
               />
             </Field>
-            <Field label="Concurrency" hint="số request đồng thời mỗi instance (1–1000)">
+            <Field
+              label={t("Concurrency")}
+              hint={t("số request đồng thời mỗi instance (1–1000)")}
+            >
               <Input value={conc} inputMode="numeric" onChange={(e) => setConc(e.target.value)} />
             </Field>
-            <Field label="Request timeout" hint="ví dụ 300s, 5m — tối đa 3600s">
+            <Field label={t("Request timeout")} hint={t("ví dụ 300s, 5m — tối đa 3600s")}>
               <Input
                 className="mono"
                 value={timeout}
@@ -181,7 +197,7 @@ export function ScalingTab({
           </div>
           {localInvalid && (
             <p className="mt-2 text-[11px]" style={{ color: "var(--status-critical)" }}>
-              Min phải ≥ 0, max phải ≥ 1, và min không được lớn hơn max.
+              {t("Min phải ≥ 0, max phải ≥ 1, và min không được lớn hơn max.")}
             </p>
           )}
         </Card>
@@ -217,9 +233,9 @@ export function ScalingTab({
                 onChange={(e) => setCpuIdle(!e.target.checked)}
               />
               <span>
-                CPU luôn được cấp
+                {t("CPU luôn được cấp")}
                 <span className="block text-[11px] text-[var(--ink-muted)]">
-                  Mặc định Cloud Run chỉ cấp CPU khi đang xử lý request.
+                  {t("Mặc định Cloud Run chỉ cấp CPU khi đang xử lý request.")}
                 </span>
               </span>
             </label>
@@ -231,18 +247,18 @@ export function ScalingTab({
                 onChange={(e) => setBoost(e.target.checked)}
               />
               <span>
-                Startup CPU boost
+                {t("Startup CPU boost")}
                 <span className="block text-[11px] text-[var(--ink-muted)]">
-                  Tăng CPU trong lúc khởi động để giảm cold start.
+                  {t("Tăng CPU trong lúc khởi động để giảm cold start.")}
                 </span>
               </span>
             </label>
           </div>
 
           <p className="mt-3 text-[11px] leading-relaxed text-[var(--ink-muted)]">
-            Cloud Run có ràng buộc giữa CPU và memory (ví dụ CPU ≥ 4 cần memory ≥ 2Gi). App không đoán
-            trước các ràng buộc này — bấm <strong>Kiểm tra trước</strong> để Cloud Run tự xác nhận mà
-            không tạo revision.
+            {t(
+              "Cloud Run có ràng buộc giữa CPU và memory (ví dụ CPU ≥ 4 cần memory ≥ 2Gi). App không đoán trước các ràng buộc này — bấm “Kiểm tra trước” để Cloud Run tự xác nhận mà không tạo revision.",
+            )}
           </p>
         </Card>
       </div>
@@ -255,14 +271,14 @@ export function ScalingTab({
           disabled={localInvalid}
           onClick={openDialog}
         >
-          Xem thay đổi & áp dụng
+          {t("Xem thay đổi & áp dụng")}
         </Button>
       </div>
 
       <ApplyDialog
         open={open}
         onClose={() => setOpen(false)}
-        title={`Áp dụng scaling / resource — ${s.name}`}
+        title={t("Áp dụng scaling / resource — {service}", { service: s.name })}
         serviceName={s.name}
         requiresTypedConfirm={requiresTypedConfirm}
         preview={preview}
