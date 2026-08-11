@@ -248,6 +248,17 @@ Hai cạm bẫy máy móc, đều đã đụng một lần:
   dịch. Đặt tên khác: `toast`, `tr`… (xem `ToastHost`, `OverviewTab`).
 - `useT()` là hook nên phải gọi **trước** mọi `return` sớm — `ErrorBox`, `TooltipCard`,
   `JobDetailDialog` đều return sớm.
+- **Rà key kiểu chỉ grep lời gọi `t("…")` trực tiếp sẽ bỏ sót mọi lời gọi tra bảng** —
+  `t(it.label)`, `t(LABEL_TEXT[v])`, `t(h.text)`, `t(labelOf(x))`. Đó là cách `NavRail`,
+  `LABEL_TEXT`/`ACTION_TEXT` của `TopBar`, `HEALTH_META` của `StatisticsPage`, `EXEC_TONE` của
+  `JobsPage`, `CATEGORY_VI`/`PRIORITY_META` của `RecommendationsPage`, `SOURCE_TEXT` của
+  `CredentialPanel`, `INGRESS_TEXT` của `OverviewTab`, và nhãn `WINDOWS` của `MetricsTab` đều
+  render — regex chỉ khớp dấu `"` ngay sau `t(` đi qua hết mấy chỗ này và báo nhầm "đã phủ đủ
+  key". Đây chính xác là lý do "Thống kê", "Gợi ý", "3 ngày" và "lỗi" (chữ thường) lọt ra
+  ngoài không có bản dịch dù đã chạy kiểm tra phủ key. Muốn rà cho đúng, grep thêm
+  `\bt(Node)?\(\s*[^"'` )]` (bất kỳ gì không phải chuỗi trực tiếp) rồi lần tay từng bảng
+  `Record<…, string>` / `{ …, text: "…" }` / `{ …, label: "…" }` nuôi lời gọi đó, liệt kê hết
+  mọi giá trị bảng có thể sinh ra — không chỉ những cái script tình cờ khớp được.
 
 ### 20. Câu cần chèn markup ở giữa thì dùng `tNode()`, không bao giờ cắt `t()` ra nhiều mảnh
 

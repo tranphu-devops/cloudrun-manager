@@ -432,7 +432,15 @@ export const EN: Dictionary = {
   "scaling mặc định": "default scaling",
   "Secret khác trong project ({count})": "Other secrets in the project ({count})",
   "Secret mà {service} đang dùng ({count})": "Secrets used by {service} ({count})",
-  Service: "Services",
+  // `Service` dùng chung cho cả nhãn tab điều hướng (NavRail) lẫn tiêu đề Card trong
+  // OverviewTab — hai chỗ đó tình cờ có cùng chuỗi tiếng Việt gốc "Service" nên chỉ có một
+  // bản dịch. Chọn số ít vì đúng cho Card; số nhiều sẽ sai ở đó.
+  Service: "Service",
+  "Thống kê": "Statistics",
+  Jobs: "Jobs",
+  "Gợi ý": "Insights",
+  "lỗi": "error",
+  "3 ngày": "3 days",
   "service + job": "services + jobs",
   "Service account": "Service account",
   "Service account đang chọn": "Active service account",

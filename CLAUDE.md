@@ -258,12 +258,24 @@ shown in the wrong language is recoverable, a warning that renders as nothing is
 Consequence to keep in mind: **editing a Vietnamese string silently orphans its translation.**
 When you reword one, update the matching key in `src/lib/locales/en.ts` in the same commit.
 
-Two mechanical traps, both already hit once:
+Three mechanical traps, all already hit once:
 
 - Inside a `.map()` whose callback parameter is named `t`, `t()` resolves to the item, not the
   translator. Name such parameters `toast`, `tr`, … (see `ToastHost`, `OverviewTab`).
 - `useT()` is a hook, so it must be called **before** any early `return` — `ErrorBox`,
   `TooltipCard` and `JobDetailDialog` all return early.
+- **A key audit that only greps for literal `t("…")` calls misses every lookup-table call —
+  `t(it.label)`, `t(LABEL_TEXT[v])`, `t(h.text)`, `t(labelOf(x))`.** Those are how `NavRail`,
+  `TopBar`'s `LABEL_TEXT`/`ACTION_TEXT`, `StatisticsPage`'s `HEALTH_META`, `JobsPage`'s
+  `EXEC_TONE`, `RecommendationsPage`'s `CATEGORY_VI`/`PRIORITY_META`,
+  `CredentialPanel`'s `SOURCE_TEXT`, `OverviewTab`'s `INGRESS_TEXT`, and `MetricsTab`'s
+  `WINDOWS` labels all render — a regex anchored on a literal `"` right after `t(` walks past
+  every one of them and reports a false "fully covered". This is exactly how "Thống kê",
+  "Gợi ý", "3 ngày" and lowercase "lỗi" shipped without an English/Japanese translation despite
+  a passing key-coverage check. To audit for real, also grep for
+  `\bt(Node)?\(\s*[^"'` )]` (anything that isn't a literal string) and manually trace every
+  `Record<…, string>` / `{ …, text: "…" }` / `{ …, label: "…" }` table that feeds one, listing
+  every value the table can produce — not just the ones a script happens to string-match.
 
 ### 20. A sentence needing inline markup uses `tNode()`, never `t()` cut into pieces
 
