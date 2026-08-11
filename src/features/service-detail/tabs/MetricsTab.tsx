@@ -1,6 +1,6 @@
 import { TimeChart } from "../../../components/charts";
 import { Card, ErrorBox, Loading, Notice, Select } from "../../../components/ui";
-import { useT } from "../../../lib/i18n";
+import { useT, useTNode } from "../../../lib/i18n";
 import { useCharts } from "../../../lib/queries";
 import type { ChartData } from "../../../lib/types";
 
@@ -28,6 +28,7 @@ export function MetricsTab({
   autoRefreshMs: number;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const q = useCharts(project, region, service, minutes, true, autoRefreshMs);
 
   const align = q.data?.alignmentSeconds ?? 60;
@@ -66,10 +67,9 @@ export function MetricsTab({
         <>
           {[q.data.instances, q.data.rps, q.data.cpu].every((c) => c.unavailable) && (
             <Notice tone="warning" icon="⚠">
-              {t("Không lấy được metric nào. Thường là thiếu")}{" "}
-              <strong>roles/monitoring.viewer</strong>{" "}
-              {t(
-                "trên project, hoặc Monitoring API chưa được enable. Vào Cài đặt → “Đối chiếu với metricDescriptors” để kiểm tra chính xác.",
+              {tNode(
+                "Không lấy được metric nào. Thường là thiếu {role} trên project, hoặc Monitoring API chưa được enable. Vào Cài đặt → “Đối chiếu với metricDescriptors” để kiểm tra chính xác.",
+                { role: <strong>roles/monitoring.viewer</strong> },
               )}
             </Notice>
           )}

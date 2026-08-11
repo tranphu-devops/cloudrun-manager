@@ -10,7 +10,7 @@ import {
   Select,
   useToast,
 } from "../../../components/ui";
-import { useT } from "../../../lib/i18n";
+import { useT, useTNode } from "../../../lib/i18n";
 import { api, asCmdError } from "../../../lib/ipc";
 import { useInvalidateService, useSecrets } from "../../../lib/queries";
 import type {
@@ -50,6 +50,7 @@ export function EnvTab({
   requiresTypedConfirm: boolean;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const toast = useToast();
   const invalidate = useInvalidateService();
   const container = detail.containers[containerIndex];
@@ -311,9 +312,15 @@ export function EnvTab({
         {t(
           "Biến đánh dấu 🔑 lấy giá trị từ Secret Manager. Giá trị của chúng không đi qua app này ở tab Env — muốn xem thì sang tab Secrets và bấm reveal.",
         )}{" "}
-        <code className="mono">PORT</code>, <code className="mono">K_SERVICE</code>,{" "}
-        <code className="mono">K_REVISION</code>, <code className="mono">K_CONFIGURATION</code>{" "}
-        {t("do Cloud Run tự quản, không đặt tay được.")}
+        {tNode("{vars} do Cloud Run tự quản, không đặt tay được.", {
+          vars: (
+            <>
+              <code className="mono">PORT</code>, <code className="mono">K_SERVICE</code>,{" "}
+              <code className="mono">K_REVISION</code>,{" "}
+              <code className="mono">K_CONFIGURATION</code>
+            </>
+          ),
+        })}
       </p>
 
       <ApplyDialog

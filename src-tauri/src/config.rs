@@ -44,6 +44,7 @@ pub enum Language {
     #[default]
     En,
     Vi,
+    Ja,
 }
 
 fn default_language() -> Language {

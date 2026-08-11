@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { StatTile } from "../../components/charts";
 import { Badge, Button, EmptyState, ErrorBox, Input, Loading, Notice, Select } from "../../components/ui";
 import { ago, compact, num, percent, regionLabel, shortImage } from "../../lib/format";
-import { useT } from "../../lib/i18n";
+import { useT, useTNode } from "../../lib/i18n";
 import { useProjectLoad, useServices } from "../../lib/queries";
 import type { Health, ProjectLoadSnapshot, ServiceSummary } from "../../lib/types";
 
@@ -46,6 +46,7 @@ export function StatisticsPage({
   onOpenService: (s: { region: string; name: string }) => void;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const servicesQ = useServices(project, autoRefreshMs);
   const loadQ = useProjectLoad(project, autoRefreshMs);
 
@@ -116,11 +117,13 @@ export function StatisticsPage({
 
       {snap && snap.missing.length > 0 && (
         <Notice tone="warning" icon="⚠">
-          {t("{n} service không lấy được số tải (instance/rps). Cột tải của chúng hiện", {
-            n: snap.missing.length,
-          })}{" "}
-          <span className="mono">–</span>
-          {t(", không phải 0 — đừng đọc thành “không có tải”.")}
+          {tNode(
+            "{n} service không lấy được số tải (instance/rps). Cột tải của chúng hiện {dash}, không phải 0 — đừng đọc thành “không có tải”.",
+            {
+              n: snap.missing.length,
+              dash: <span className="mono">–</span>,
+            },
+          )}
         </Notice>
       )}
 

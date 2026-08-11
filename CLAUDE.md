@@ -17,9 +17,13 @@ run primarily on Windows (macOS best-effort). Open source under the MIT license 
 - **Code comments** are Vietnamese. Variable, function and file names are English.
 - **UI strings** are authored in Vietnamese and translated at render time. Every
   user-visible string goes through `t()` from `src/lib/i18n.tsx`, whose **key is the
-  Vietnamese sentence itself** (gettext style). Add the English text to
-  `src/lib/locales/en.ts`. A missing key falls back to Vietnamese rather than rendering
-  empty — see invariant #19.
+  Vietnamese sentence itself** (gettext style). Add the translation to
+  `src/lib/locales/{en,ja}.ts`. A missing key falls back to Vietnamese rather than rendering
+  empty — see invariant #19. Adding a fourth language touches `Language` in
+  `src-tauri/src/config.rs` and `src/lib/types.ts`, a new `locales/xx.ts`, and one line each
+  in `i18n.tsx`'s `DICTS` and `LANGUAGE_NAMES` — no UI file needs to change. A sentence that
+  needs markup in the middle (a link, `<code>`, a bolded number) must use `tNode()`, not
+  `t()` split into pieces around the markup — see invariant #20.
 - **Error messages produced by Rust** (`gcp::error`, cron lint, `CostReport.errorSources`)
   are still Vietnamese only. They must say *what to do next*, not merely *what went wrong* —
   see `crates/gcp/src/error.rs` for the standard.
@@ -76,8 +80,8 @@ src-tauri/src/
 src/                        React
   lib/types.ts              ★ mirror of crates/gcp/src/types.rs
   lib/ipc.ts                invoke wrapper (api + apiV2). Commands snake_case, params camelCase.
-  lib/i18n.tsx              ★ t() + I18nProvider. Key = the Vietnamese sentence (gettext style).
-  lib/locales/en.ts         English dictionary. Missing key → falls back to Vietnamese.
+  lib/i18n.tsx              ★ t()/tNode() + I18nProvider. Key = the Vietnamese sentence (gettext style).
+  lib/locales/{en,ja}.ts    per-language dictionaries. Missing key → falls back to Vietnamese.
   lib/format.ts             number/date formatting; holds the locale at module scope (see its header)
   components/LanguageGate.tsx  feeds Settings.language into the tree, above ToastHost
   components/NavRail.tsx    (v2) vertical navigation across the 5 screens
@@ -260,6 +264,34 @@ Two mechanical traps, both already hit once:
   translator. Name such parameters `toast`, `tr`, … (see `ToastHost`, `OverviewTab`).
 - `useT()` is a hook, so it must be called **before** any early `return` — `ErrorBox`,
   `TooltipCard` and `JobDetailDialog` all return early.
+
+### 20. A sentence needing inline markup uses `tNode()`, never `t()` cut into pieces
+
+The first version of this UI split sentences around inline `<code>`/`<strong>`/`<a>` like:
+
+```tsx
+{t("Account hiện tại không có")} <code>secretmanager.versions.access</code> {t("trên project này…")}
+```
+
+That works only by accident: Vietnamese, English and (mostly) Japanese happen to keep clauses
+in a similar order, so the markup lands in a plausible spot. It breaks the moment a language
+puts the verb somewhere else — Japanese is SOV, so a predicate that sat mid-sentence in
+Vietnamese needs to move to the end, and a translator cannot do that because the position of
+the markup is fixed by the JSX, not by the translation. This was discovered — and fixed at all
+nine call sites — when Japanese was added.
+
+Fix: keep the whole sentence as one key, with a `{name}` placeholder where the markup goes,
+and pass the `ReactNode` through `tNode()`:
+
+```tsx
+{tNode("Account hiện tại không có {perm} trên project này, nên chỉ xem được metadata.", {
+  perm: <code className="mono">secretmanager.versions.access</code>,
+})}
+```
+
+Each language's dictionary is then free to put `{perm}` wherever its grammar requires.
+`useTNode()` sits next to `useT()` in `src/lib/i18n.tsx`; read the header comment there before
+adding a new site.
 
 ## Conventions
 

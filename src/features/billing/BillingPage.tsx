@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { StatTile } from "../../components/charts";
 import { Badge, Button, Card, EmptyState, ErrorBox, Input, Loading, Notice, Select } from "../../components/ui";
 import { num, regionLabel } from "../../lib/format";
-import { useT } from "../../lib/i18n";
+import { useT, useTNode } from "../../lib/i18n";
 import { apiV2 } from "../../lib/ipc";
 import type { CmdError, CostReport, CostRow } from "../../lib/types";
 
@@ -37,6 +37,7 @@ type SortKey = "cost" | "cpu" | "name";
 
 export function BillingPage({ project }: { project: string }) {
   const t = useT();
+  const tNode = useTNode();
   const [sortBy, setSortBy] = useState<SortKey>("cost");
   const [filter, setFilter] = useState("");
   const [kindFilter, setKindFilter] = useState<"all" | "service" | "job">("all");
@@ -79,18 +80,21 @@ export function BillingPage({ project }: { project: string }) {
       {/* Nhãn "ước lượng" đặt cao nhất, trước cả số — để không ai đọc con số mà quên nó là ước lượng. */}
       <Notice tone="warning" icon="≈">
         <strong>{t("Đây là ước lượng, không phải hoá đơn.")}</strong>{" "}
-        {t(
-          "Con số suy từ metric tải × đơn giá công khai của Cloud Run, chưa gồm committed-use discount, network egress, hay chi phí service khác (Cloud SQL, Secret Manager…). Đối chiếu số thật ở",
-        )}{" "}
-        <a
-          className="underline"
-          href={`https://console.cloud.google.com/billing/linkedaccount?project=${encodeURIComponent(project)}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Cloud Billing
-        </a>
-        .
+        {tNode(
+          "Con số suy từ metric tải × đơn giá công khai của Cloud Run, chưa gồm committed-use discount, network egress, hay chi phí service khác (Cloud SQL, Secret Manager…). Đối chiếu số thật ở {link}.",
+          {
+            link: (
+              <a
+                className="underline"
+                href={`https://console.cloud.google.com/billing/linkedaccount?project=${encodeURIComponent(project)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Cloud Billing
+              </a>
+            ),
+          },
+        )}
       </Notice>
 
       {report?.usageUnavailable && (

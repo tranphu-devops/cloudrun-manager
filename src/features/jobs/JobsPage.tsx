@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge, Button, Dialog, ErrorBox, Input, Loading, Notice, Select, useToast } from "../../components/ui";
 import { StatTile } from "../../components/charts";
 import { ago, agoSeconds, dateTime, num } from "../../lib/format";
-import { useT } from "../../lib/i18n";
+import { useT, useTNode } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, ExecStatus, Finding, JobRow, JobsResult, Severity } from "../../lib/types";
 
@@ -48,6 +48,7 @@ export function JobsPage({
   requiresTypedConfirm: boolean;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const qc = useQueryClient();
   const toast = useToast();
   const [filter, setFilter] = useState("");
@@ -163,11 +164,14 @@ export function JobsPage({
 
       {stats.envSecrets > 0 && (
         <Notice tone="critical" icon="🔑">
-          <strong>{t("{n} job", { n: stats.envSecrets })}</strong>{" "}
-          {t(
-            "có biến môi trường dạng plain trông như secret (Stripe key, token, mật khẩu…). Ai đọc được cấu hình job là đọc được giá trị đó — nên chuyển sang Secret Manager rồi tham chiếu bằng",
+          {tNode(
+            "{n} có biến môi trường dạng plain trông như secret (Stripe key, token, mật khẩu…). Ai đọc được cấu hình job là đọc được giá trị đó — nên chuyển sang Secret Manager rồi tham chiếu bằng {cmd}.",
+            {
+              n: <strong>{t("{n} job", { n: stats.envSecrets })}</strong>,
+              cmd: <code className="mono">secretKeyRef</code>,
+            },
           )}{" "}
-          <code className="mono">secretKeyRef</code>. {t("Bấm vào job để xem biến nào.")}
+          {t("Bấm vào job để xem biến nào.")}
         </Notice>
       )}
 

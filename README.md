@@ -20,10 +20,12 @@ switch projects.
 └──────────────────┴───────────────────────────────────────────────────┘
 ```
 
-> **Note on language.** Documentation is available in English and Vietnamese. Code comments,
-> error messages and UI strings are written in **Vietnamese** — this is an internal operations
-> tool for a Vietnamese-speaking team, and the error messages are tuned to tell an operator
-> *what to do next*, which is worth more than uniformity.
+> **Note on language.** Documentation is available in English and Vietnamese. The UI ships in
+> English, Vietnamese, and Japanese — switch it in **⚙ Settings → Language**; English is the
+> default on a fresh install. Code comments and error messages produced by the Rust layer
+> (`gcp::error`, cron lint, `CostReport.errorSources`) are Vietnamese only — this is an
+> internal operations tool built by a Vietnamese-speaking team, and those messages are tuned
+> to tell an operator *what to do next*, which is worth more than uniformity.
 
 ## Getting started
 

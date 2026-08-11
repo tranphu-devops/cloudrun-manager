@@ -9,8 +9,12 @@
  * lần khi đổi — cùng cách `moment.locale()` hay `dayjs.locale()` làm.
  *
  * Hệ quả cần biết: hàm ở đây **không còn thuần tuyệt đối**. Chúng đọc một biến ngoài. Đổi
- * ngôn ngữ mà React không render lại thì chữ cũ vẫn nằm đó — `I18nProvider` xử lý bằng
- * cách set trước khi render và `key` theo `lang` ở gốc cây.
+ * ngôn ngữ mà React không render lại thì chữ cũ vẫn nằm đó — `I18nProvider` set biến này
+ * ngay trong lượt render của nó (không phải trong `useEffect`), nên lần render đầu sau khi
+ * đổi ngôn ngữ đã ra đúng locale, không cần remount.
+ *
+ * Thêm ngôn ngữ mới: mọi bảng tra ở file này là `Record<Language, …>` — TypeScript tự báo
+ * thiếu key khi thêm biến thể vào `Language`, không cần tìm bằng tay.
  */
 
 import type { Language } from "./types";
@@ -22,8 +26,14 @@ export function setFormatLanguage(lang: Language) {
   CURRENT = lang;
 }
 
+const LOCALE_TAG: Record<Language, string> = {
+  vi: "vi-VN",
+  en: "en-US",
+  ja: "ja-JP",
+};
+
 function tag(): string {
-  return CURRENT === "vi" ? "vi-VN" : "en-US";
+  return LOCALE_TAG[CURRENT];
 }
 
 export function cn(...parts: Array<string | false | null | undefined>) {
@@ -61,21 +71,42 @@ export function ms(v: number | null | undefined): string {
   return `${(v / 1000).toFixed(2)}s`;
 }
 
+/** Mỗi ngôn ngữ tự quyết cách ghép số + đơn vị — đừng giả định trật tự "số rồi chữ". */
+const RELATIVE_TIME: Record<
+  Language,
+  { justNow: string; sec: (n: number) => string; min: (n: number) => string; hour: (n: number) => string; day: (n: number) => string }
+> = {
+  vi: {
+    justNow: "vừa xong",
+    sec: (n) => `${n}s trước`,
+    min: (n) => `${n} phút trước`,
+    hour: (n) => `${n} giờ trước`,
+    day: (n) => `${n} ngày trước`,
+  },
+  en: {
+    justNow: "just now",
+    sec: (n) => `${n}s ago`,
+    min: (n) => `${n} min ago`,
+    hour: (n) => `${n}h ago`,
+    day: (n) => `${n}d ago`,
+  },
+  ja: {
+    justNow: "たった今",
+    sec: (n) => `${n}秒前`,
+    min: (n) => `${n}分前`,
+    hour: (n) => `${n}時間前`,
+    day: (n) => `${n}日前`,
+  },
+};
+
 /** Khoảng thời gian tính bằng giây → câu gọn. */
 export function agoSeconds(s: number): string {
-  const vi = CURRENT === "vi";
-  if (s < 5) return vi ? "vừa xong" : "just now";
-  if (s < 60) return vi ? `${Math.round(s)}s trước` : `${Math.round(s)}s ago`;
-  if (s < 3600) {
-    const m = Math.round(s / 60);
-    return vi ? `${m} phút trước` : `${m} min ago`;
-  }
-  if (s < 86400) {
-    const h = Math.round(s / 3600);
-    return vi ? `${h} giờ trước` : `${h}h ago`;
-  }
-  const d = Math.round(s / 86400);
-  return vi ? `${d} ngày trước` : `${d}d ago`;
+  const r = RELATIVE_TIME[CURRENT];
+  if (s < 5) return r.justNow;
+  if (s < 60) return r.sec(Math.round(s));
+  if (s < 3600) return r.min(Math.round(s / 60));
+  if (s < 86400) return r.hour(Math.round(s / 3600));
+  return r.day(Math.round(s / 86400));
 }
 
 export function ago(iso: string | null | undefined): string {
@@ -125,16 +156,17 @@ export function timeTooltip(t: number): string {
 /**
  * `asia-northeast1` → `asia-northeast1 · Tokyo` cho những region hay dùng.
  *
- * Tên thành phố giữ nguyên dạng tiếng Anh ở cả hai ngôn ngữ, trừ vài chỗ tiếng Việt có
- * tên riêng thật sự phổ biến. Dịch "Iowa" thành gì đó khác chỉ làm khó tra cứu.
+ * Tên thành phố mặc định dạng tiếng Anh; chỉ điền `vi`/`ja` ở chỗ tiếng đó có tên riêng
+ * thật sự phổ biến. Dịch "Iowa" thành gì đó khác chỉ làm khó tra cứu — hầu hết dev đọc tên
+ * region tiếng Anh trong mọi ngôn ngữ.
  */
-const REGION_CITY: Record<string, { en: string; vi?: string }> = {
-  "asia-northeast1": { en: "Tokyo" },
-  "asia-northeast2": { en: "Osaka" },
+const REGION_CITY: Record<string, Partial<Record<Language, string>> & { en: string }> = {
+  "asia-northeast1": { en: "Tokyo", ja: "東京" },
+  "asia-northeast2": { en: "Osaka", ja: "大阪" },
   "asia-northeast3": { en: "Seoul" },
   "asia-southeast1": { en: "Singapore" },
   "asia-southeast2": { en: "Jakarta" },
-  "asia-east1": { en: "Taiwan", vi: "Đài Loan" },
+  "asia-east1": { en: "Taiwan", vi: "Đài Loan", ja: "台湾" },
   "asia-east2": { en: "Hong Kong" },
   "asia-south1": { en: "Mumbai" },
   "us-central1": { en: "Iowa" },
@@ -147,7 +179,7 @@ const REGION_CITY: Record<string, { en: string; vi?: string }> = {
 export function regionLabel(r: string): string {
   const entry = REGION_CITY[r];
   if (!entry) return r;
-  const city = CURRENT === "vi" ? (entry.vi ?? entry.en) : entry.en;
+  const city = entry[CURRENT] ?? entry.en;
   return `${r} · ${city}`;
 }
 
@@ -164,7 +196,9 @@ export function shortSha(image: string | null): string | null {
   return at >= 0 ? image.slice(at + 8, at + 20) : null;
 }
 
-/** Duration protobuf `300s` → `5 phút` / `5 min`. */
+const MINUTE_UNIT: Record<Language, string> = { vi: "phút", en: "min", ja: "分" };
+
+/** Duration protobuf `300s` → `5 phút` / `5 min` / `5分`. */
 export function humanTimeout(t: string | null): string {
   if (!t) return "–";
   const m = /^(\d+(?:\.\d+)?)s$/.exec(t.trim());
@@ -173,7 +207,7 @@ export function humanTimeout(t: string | null): string {
   if (s < 60) return `${s}s`;
   const min = Math.floor(s / 60);
   const rest = Math.round(s - min * 60);
-  const unit = CURRENT === "vi" ? "phút" : "min";
+  const unit = MINUTE_UNIT[CURRENT];
   return rest === 0 ? `${min} ${unit}` : `${min} ${unit} ${rest}s`;
 }
 

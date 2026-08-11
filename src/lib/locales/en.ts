@@ -17,10 +17,6 @@ export const EN: Dictionary = {
   " · đang hiển thị {n} dòng": " · showing {n} lines",
   " · dữ liệu {ago}": " · data {ago}",
   "— không có lịch": "— no schedule",
-  ", không phải 0 — đừng đọc thành “không có tải”.":
-    ", not 0 — do not read that as “no traffic”.",
-  ": revision mới sẽ tự lấy version mới nhất, revision đang chạy thì không":
-    ": new revisions pick up the newest version, running ones do not",
   "…": "…",
   "“CPU luôn được cấp” tính tiền CPU cho toàn bộ thời gian instance tồn tại, không chỉ lúc xử lý request. Chỉ cần bật khi app có việc chạy nền ngoài request (worker, cron trong process).":
     "“CPU always allocated” bills CPU for the whole lifetime of the instance, not only while it handles requests. Turn it on only if the app does background work outside requests (workers, in-process cron).",
@@ -39,8 +35,8 @@ export const EN: Dictionary = {
   "{n} giờ": "{n}h",
   "{n} job": "{n} jobs",
   "{n} phút": "{n} min",
-  "{n} service không lấy được số tải (instance/rps). Cột tải của chúng hiện":
-    "{n} services have no load data (instances/rps). Their load columns show",
+  "{n} service không lấy được số tải (instance/rps). Cột tải của chúng hiện {dash}, không phải 0 — đừng đọc thành “không có tải”.":
+    "{n} services have no load data (instances/rps). Their load columns show {dash}, not 0 — do not read that as “no traffic”.",
   "{pct} lỗi": "{pct} errors",
   "{project} được gắn nhãn PRODUCTION. Mỗi thao tác ghi vẫn sẽ yêu cầu gõ đúng tên service.":
     "{project} is labelled PRODUCTION. Every write will still require typing the exact service name.",
@@ -74,7 +70,8 @@ export const EN: Dictionary = {
   "30 phút gần nhất": "last 30 minutes",
   "6 giờ": "6 hours",
   "7 ngày": "7 days",
-  "Account hiện tại không có": "The current account lacks",
+  "Account hiện tại không có {perm} trên project này, nên chỉ xem được metadata. Trên project production, không cấp quyền này là một lựa chọn hợp lý.":
+    "The current account lacks {perm} on this project, so only metadata is visible. On a production project, withholding this permission is a reasonable choice.",
   "Ẩn ngay": "Hide now",
   "Áp dụng": "Apply",
   "Áp dụng (tạo revision mới)": "Apply (creates a new revision)",
@@ -85,7 +82,8 @@ export const EN: Dictionary = {
     "The app only reads recommendations and marks their state. Actually applying one (changing scaling, editing IAM…) does not happen here — open the resource in the Console so the change is deliberate.",
   "App có thể thao tác trên mọi project — cẩn thận với prod.":
     "The app can now touch any project — be careful with prod.",
-  "App sẽ kiểm quyền của SA trên": "The app will check the SA's permissions on",
+  "App sẽ kiểm quyền của SA trên {projects}.":
+    "The app will check the SA's permissions on {projects}.",
   "App sẽ xác thực bằng tài khoản gcloud của máy, không đụng tới vault.":
     "The app will authenticate with this machine's gcloud account and leave the vault alone.",
   "Auto refresh (giây)": "Auto refresh (seconds)",
@@ -149,14 +147,14 @@ export const EN: Dictionary = {
   "Cloud Run có ràng buộc giữa CPU và memory (ví dụ CPU ≥ 4 cần memory ≥ 2Gi). App không đoán trước các ràng buộc này — bấm “Kiểm tra trước” để Cloud Run tự xác nhận mà không tạo revision.":
     "Cloud Run constrains CPU against memory (for example CPU ≥ 4 needs memory ≥ 2Gi). The app does not try to predict those rules — press “Dry run” and let Cloud Run validate without creating a revision.",
   "Cloud SQL": "Cloud SQL",
-  "có biến môi trường dạng plain trông như secret (Stripe key, token, mật khẩu…). Ai đọc được cấu hình job là đọc được giá trị đó — nên chuyển sang Secret Manager rồi tham chiếu bằng":
-    "have plaintext environment variables that look like secrets (Stripe keys, tokens, passwords…). Anyone who can read the job config can read those values — move them to Secret Manager and reference them with",
+  "{n} có biến môi trường dạng plain trông như secret (Stripe key, token, mật khẩu…). Ai đọc được cấu hình job là đọc được giá trị đó — nên chuyển sang Secret Manager rồi tham chiếu bằng {cmd}.":
+    "{n} have plaintext environment variables that look like secrets (Stripe keys, tokens, passwords…). Anyone who can read the job config can read those values — move them to Secret Manager and reference them with {cmd}.",
   "Có request lỗi": "Serving errors",
   "Có secret service này tham chiếu nhưng không xuất hiện trong danh sách Secret Manager của project — thường là secret nằm ở project khác (cross-project reference), hoặc đã bị xoá.":
     "This service references a secret that does not appear in the project's Secret Manager list — usually a cross-project reference, or the secret was deleted.",
   "có thay đổi chưa lưu": "unsaved changes",
-  "Con số suy từ metric tải × đơn giá công khai của Cloud Run, chưa gồm committed-use discount, network egress, hay chi phí service khác (Cloud SQL, Secret Manager…). Đối chiếu số thật ở":
-    "The figures come from load metrics × Cloud Run's public list prices; they exclude committed-use discounts, network egress, and other services (Cloud SQL, Secret Manager…). Check the real numbers in",
+  "Con số suy từ metric tải × đơn giá công khai của Cloud Run, chưa gồm committed-use discount, network egress, hay chi phí service khác (Cloud SQL, Secret Manager…). Đối chiếu số thật ở {link}.":
+    "The figures come from load metrics × Cloud Run's public list prices; they exclude committed-use discounts, network egress, and other services (Cloud SQL, Secret Manager…). Check the real numbers in {link}.",
   Concurrency: "Concurrency",
   "Condition từ Cloud Run": "Conditions from Cloud Run",
   Container: "Container",
@@ -237,8 +235,8 @@ export const EN: Dictionary = {
   "để mở các thao tác ghi:": "to unlock write operations:",
   Dev: "Dev",
   "Điều hướng": "Navigation",
-  "do Cloud Run tự quản, không đặt tay được.":
-    "are managed by Cloud Run and cannot be set by hand.",
+  "{vars} do Cloud Run tự quản, không đặt tay được.":
+    "{vars} are managed by Cloud Run and cannot be set by hand.",
   "Độ tin cậy": "Reliability",
   "Độ tươi của dữ liệu đang hiển thị": "How fresh the displayed data is",
   "Đối chiếu với metricDescriptors": "Verify against metricDescriptors",
@@ -247,7 +245,8 @@ export const EN: Dictionary = {
   "Dòng chi phí": "Cost rows",
   "dự kiến": "expected",
   "dữ liệu {ago}": "data {ago}",
-  "dùng": "uses",
+  "dùng {latest}: revision mới sẽ tự lấy version mới nhất, revision đang chạy thì không":
+    "using {latest}: new revisions pick up the newest version automatically, running ones do not",
   Env: "Env",
   "env plain trông như secret": "plaintext env that looks like a secret",
   "Execution cuối": "Last execution",
@@ -304,7 +303,8 @@ export const EN: Dictionary = {
     "No traffic declared — 100% goes to the newest revision (Cloud Run's default).",
   "Không kiểm tra được": "Could not run the check",
   "Không lấy được metric": "Metric unavailable",
-  "Không lấy được metric nào. Thường là thiếu": "No metrics could be fetched. Usually a missing",
+  "Không lấy được metric nào. Thường là thiếu {role} trên project, hoặc Monitoring API chưa được enable. Vào Cài đặt → “Đối chiếu với metricDescriptors” để kiểm tra chính xác.":
+    "No metrics could be fetched. Usually a missing {role} on the project, or the Monitoring API is not enabled. Use Settings → “Verify against metricDescriptors” to check precisely.",
   "Không lấy được metric tải cho project này (thiếu quyền Monitoring hoặc chưa bật API). Con số bên dưới suy từ cấu hình min-instances và giả định tải mặc định — sai lệch lớn hơn bình thường.":
     "Could not fetch load metrics for this project (missing Monitoring permission, or the API is off). The figures below come from min-instances plus assumed default load — less accurate than usual.",
   "Không lấy được: {list} — badge tương ứng hiện “–”.":
@@ -381,8 +381,8 @@ export const EN: Dictionary = {
   "Nhảy tới service… (Enter để mở, Esc để đóng)":
     "Jump to a service… (Enter to open, Esc to close)",
   "Nhịp poll log (giây)": "Log poll interval (seconds)",
-  "Nội dung này có vẻ là dữ liệu nhị phân (không phải text UTF-8). Phần hiển thị bên dưới đã bị thay ký tự nên không dùng để copy — hãy lấy trực tiếp bằng":
-    "This looks like binary data (not UTF-8 text). The rendering below has substituted characters, so do not copy from it — fetch it directly with",
+  "Nội dung này có vẻ là dữ liệu nhị phân (không phải text UTF-8). Phần hiển thị bên dưới đã bị thay ký tự nên không dùng để copy — hãy lấy trực tiếp bằng {cmd}.":
+    "This looks like binary data (not UTF-8 text). The rendering below has substituted characters, so do not copy from it — fetch it directly with {cmd}.",
   "Passphrase (đúng passphrase của vault)": "Passphrase (the vault's existing passphrase)",
   "Port container": "Container port",
   Production: "Production",
@@ -395,8 +395,8 @@ export const EN: Dictionary = {
   "Project production — mọi thao tác ghi cần gõ tên service":
     "Production project — every write requires typing the service name",
   Ready: "Ready",
-  "Recommender API chưa được bật trên project này nên danh sách có thể thiếu. Bật tại":
-    "The Recommender API is not enabled on this project, so the list may be incomplete. Enable it at",
+  "Recommender API chưa được bật trên project này nên danh sách có thể thiếu. Bật tại {link}.":
+    "The Recommender API is not enabled on this project, so the list may be incomplete. Enable it at {link}.",
   Region: "Region",
   "Request / giây": "Requests / second",
   "request / instance": "requests / instance",
@@ -522,10 +522,6 @@ export const EN: Dictionary = {
     "Traffic pinned — new revisions receive none",
   "Traffic ghim vào revision cụ thể": "Traffic pinned to a specific revision",
   "Trạng thái": "Status",
-  "trên project này, nên chỉ xem được metadata. Trên project production, không cấp quyền này là một lựa chọn hợp lý.":
-    "on this project, so only metadata is visible. On a production project, withholding this permission is a reasonable choice.",
-  "trên project, hoặc Monitoring API chưa được enable. Vào Cài đặt → “Đối chiếu với metricDescriptors” để kiểm tra chính xác.":
-    "on the project, or the Monitoring API is not enabled. Use Settings → “Verify against metricDescriptors” to check precisely.",
   "trong 30 phút": "in 30 minutes",
   "trường phút để trống": "empty minute field",
   "Tự ẩn secret sau (giây)": "Auto-hide secrets after (seconds)",

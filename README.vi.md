@@ -19,6 +19,13 @@ xem nhanh service, sửa env, xem secret, xem log, xem tải và số instance, 
 └──────────────────┴───────────────────────────────────────────────────┘
 ```
 
+> **Lưu ý về ngôn ngữ.** Doc có bản tiếng Anh và tiếng Việt. UI hỗ trợ tiếng Anh, tiếng Việt,
+> và tiếng Nhật — đổi ở **⚙ Cài đặt → Ngôn ngữ**; mặc định khi cài mới là tiếng Anh. Comment
+> trong code và message lỗi sinh từ tầng Rust (`gcp::error`, cron lint,
+> `CostReport.errorSources`) chỉ có tiếng Việt — đây là công cụ vận hành nội bộ do nhóm nói
+> tiếng Việt xây dựng, và mấy message đó được viết để nói *phải làm gì tiếp*, quan trọng hơn
+> tính đồng nhất.
+
 ## Bắt đầu
 
 ```bash

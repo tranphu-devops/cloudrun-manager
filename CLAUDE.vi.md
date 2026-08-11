@@ -17,8 +17,12 @@ là chính (macOS best-effort). Mã nguồn mở theo giấy phép MIT — xem `
 - **Comment trong code** viết tiếng Việt. Tên biến, tên hàm, tên file dùng tiếng Anh.
 - **Text UI** viết bằng tiếng Việt rồi dịch lúc render. Mọi chuỗi người dùng thấy đều đi qua
   `t()` trong `src/lib/i18n.tsx`, mà **key chính là câu tiếng Việt** (kiểu gettext). Thêm bản
-  tiếng Anh vào `src/lib/locales/en.ts`. Thiếu key thì rơi về tiếng Việt chứ không ra chuỗi
-  rỗng — xem bất biến #19.
+  dịch vào `src/lib/locales/{en,ja}.ts`. Thiếu key thì rơi về tiếng Việt chứ không ra chuỗi
+  rỗng — xem bất biến #19. Thêm ngôn ngữ thứ tư chỉ cần sửa `Language` ở
+  `src-tauri/src/config.rs` và `src/lib/types.ts`, thêm file `locales/xx.ts` mới, và một dòng
+  mỗi chỗ trong `DICTS`/`LANGUAGE_NAMES` của `i18n.tsx` — không phải đụng file UI nào. Câu cần
+  chèn markup ở giữa (link, `<code>`, số in đậm) phải dùng `tNode()`, không cắt `t()` ra nhiều
+  mảnh — xem bất biến #20.
 - **Message lỗi sinh từ Rust** (`gcp::error`, cron lint, `CostReport.errorSources`) vẫn chỉ có
   tiếng Việt. Chúng phải nói được *phải làm gì tiếp*, không chỉ nói *cái gì sai* — xem
   `crates/gcp/src/error.rs` để thấy chuẩn.
@@ -74,8 +78,8 @@ src-tauri/src/
 src/                        React
   lib/types.ts              ★ mirror của crates/gcp/src/types.rs
   lib/ipc.ts                wrapper invoke (api + apiV2). Command snake_case, tham số camelCase.
-  lib/i18n.tsx              ★ t() + I18nProvider. Key = câu tiếng Việt (kiểu gettext).
-  lib/locales/en.ts         từ điển tiếng Anh. Thiếu key → rơi về tiếng Việt.
+  lib/i18n.tsx              ★ t()/tNode() + I18nProvider. Key = câu tiếng Việt (kiểu gettext).
+  lib/locales/{en,ja}.ts    từ điển từng ngôn ngữ. Thiếu key → rơi về tiếng Việt.
   lib/format.ts             format số/ngày; giữ locale ở tầm module (xem header của file)
   components/LanguageGate.tsx  đưa Settings.language xuống cây, nằm trên ToastHost
   components/NavRail.tsx    (v2) điều hướng dọc giữa 5 màn
@@ -244,6 +248,32 @@ Hai cạm bẫy máy móc, đều đã đụng một lần:
   dịch. Đặt tên khác: `toast`, `tr`… (xem `ToastHost`, `OverviewTab`).
 - `useT()` là hook nên phải gọi **trước** mọi `return` sớm — `ErrorBox`, `TooltipCard`,
   `JobDetailDialog` đều return sớm.
+
+### 20. Câu cần chèn markup ở giữa thì dùng `tNode()`, không bao giờ cắt `t()` ra nhiều mảnh
+
+Bản đầu tiên của UI này cắt câu quanh `<code>`/`<strong>`/`<a>` kiểu:
+
+```tsx
+{t("Account hiện tại không có")} <code>secretmanager.versions.access</code> {t("trên project này…")}
+```
+
+Cách đó chạy được chỉ vì tình cờ: tiếng Việt, tiếng Anh và (phần lớn) tiếng Nhật xếp mệnh đề
+theo thứ tự gần giống nhau, nên mảnh markup rơi vào đúng chỗ hợp lý. Nó vỡ ngay khi một ngôn
+ngữ đặt động từ ở vị trí khác — tiếng Nhật là SOV, nên vị ngữ từng nằm giữa câu tiếng Việt
+phải dời ra cuối câu, mà người dịch không dời được vì vị trí markup do JSX quyết định, không
+do bản dịch. Lỗi này bị phát hiện — và sửa ở cả chín chỗ — khi thêm tiếng Nhật.
+
+Cách sửa: giữ nguyên cả câu làm một key, đặt placeholder `{name}` ngay chỗ cần chèn markup,
+rồi truyền `ReactNode` qua `tNode()`:
+
+```tsx
+{tNode("Account hiện tại không có {perm} trên project này, nên chỉ xem được metadata.", {
+  perm: <code className="mono">secretmanager.versions.access</code>,
+})}
+```
+
+Mỗi ngôn ngữ tự do đặt `{perm}` ở đúng vị trí ngữ pháp của mình. `useTNode()` nằm cạnh
+`useT()` trong `src/lib/i18n.tsx` — đọc chú thích đầu file đó trước khi thêm chỗ dùng mới.
 
 ## Quy ước
 

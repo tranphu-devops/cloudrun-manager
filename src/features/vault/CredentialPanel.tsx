@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Badge, Button, ErrorBox, Field, Input, Loading, Notice } from "../../components/ui";
-import { useT } from "../../lib/i18n";
+import { useT, useTNode } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, ImportResult, VaultStatus } from "../../lib/types";
 
@@ -31,6 +31,7 @@ export function CredentialPanel({
   onVaultChanged?: (s: VaultStatus) => void;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [keyJson, setKeyJson] = useState("");
@@ -222,8 +223,9 @@ export function CredentialPanel({
           {allowedProjects.length > 0 && (
             <>
               {" "}
-              {t("App sẽ kiểm quyền của SA trên")}{" "}
-              <span className="mono">{allowedProjects.join(", ")}</span>.
+              {tNode("App sẽ kiểm quyền của SA trên {projects}.", {
+                projects: <span className="mono">{allowedProjects.join(", ")}</span>,
+              })}
             </>
           )}
         </p>

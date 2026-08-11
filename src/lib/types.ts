@@ -13,7 +13,7 @@ export type Health = "ready" | "notReady" | "reconciling" | "unknown";
 export type EnvKind = "plain" | "secretRef";
 export type EnvLabel = "dev" | "staging" | "prod" | "unknown";
 /** Ngôn ngữ UI. Chỉ ảnh hưởng tầng React — message lỗi từ Rust vẫn là tiếng Việt. */
-export type Language = "en" | "vi";
+export type Language = "en" | "vi" | "ja";
 export type TokenSource = "serviceAccount" | "gcloudCli" | "adc";
 
 export interface AuthInfo {

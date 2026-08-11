@@ -12,7 +12,7 @@ import {
   Select,
 } from "../../../components/ui";
 import { dateTime } from "../../../lib/format";
-import { useT } from "../../../lib/i18n";
+import { useT, useTNode } from "../../../lib/i18n";
 import { api, asCmdError, consoleSecretUrl } from "../../../lib/ipc";
 import { useSecrets, useSecretVersions } from "../../../lib/queries";
 import type { CmdError, RevealResult, ServiceDetail } from "../../../lib/types";
@@ -36,6 +36,7 @@ function RevealPanel({
   version: string;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const [value, setValue] = useState<RevealResult | null>(null);
   const [error, setError] = useState<CmdError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -115,10 +116,10 @@ function RevealPanel({
 
       {value.looksBinary && (
         <Notice tone="warning" icon="⚠">
-          {t(
-            "Nội dung này có vẻ là dữ liệu nhị phân (không phải text UTF-8). Phần hiển thị bên dưới đã bị thay ký tự nên không dùng để copy — hãy lấy trực tiếp bằng",
-          )}{" "}
-          <code className="mono">gcloud secrets versions access</code>.
+          {tNode(
+            "Nội dung này có vẻ là dữ liệu nhị phân (không phải text UTF-8). Phần hiển thị bên dưới đã bị thay ký tự nên không dùng để copy — hãy lấy trực tiếp bằng {cmd}.",
+            { cmd: <code className="mono">gcloud secrets versions access</code> },
+          )}
         </Notice>
       )}
 
@@ -142,6 +143,7 @@ export function SecretsTab({
   canReveal: boolean;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const all = useSecrets(project, true);
   const [selected, setSelected] = useState<string | null>(null);
   const [version, setVersion] = useState("latest");
@@ -165,10 +167,9 @@ export function SecretsTab({
     <div className="flex flex-col gap-3">
       {!canReveal && (
         <Notice tone="info" icon="🔒">
-          {t("Account hiện tại không có")}{" "}
-          <code className="mono">secretmanager.versions.access</code>{" "}
-          {t(
-            "trên project này, nên chỉ xem được metadata. Trên project production, không cấp quyền này là một lựa chọn hợp lý.",
+          {tNode(
+            "Account hiện tại không có {perm} trên project này, nên chỉ xem được metadata. Trên project production, không cấp quyền này là một lựa chọn hợp lý.",
+            { perm: <code className="mono">secretmanager.versions.access</code> },
           )}
         </Notice>
       )}
@@ -206,9 +207,9 @@ export function SecretsTab({
                     <Badge>version {e.version}</Badge>
                     {e.version === "latest" && (
                       <span className="text-[11px] text-[var(--ink-muted)]">
-                        {t("dùng")} <code className="mono">latest</code>
-                        {t(
-                          ": revision mới sẽ tự lấy version mới nhất, revision đang chạy thì không",
+                        {tNode(
+                          "dùng {latest}: revision mới sẽ tự lấy version mới nhất, revision đang chạy thì không",
+                          { latest: <code className="mono">latest</code> },
                         )}
                       </span>
                     )}

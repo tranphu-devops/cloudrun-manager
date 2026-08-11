@@ -287,7 +287,7 @@ const settings = {
   allowedProjects: ["example-project"],
   projectLock: true,
   // Cùng mặc định với `Settings::default()` bên Rust.
-  language: "en" as "en" | "vi",
+  language: "en" as "en" | "vi" | "ja",
   projectLabels: { "example-prod": "prod", "example-staging": "staging" } as Record<string, string>,
   recentProjects: ["example-project"],
   currentProject: "example-project",
@@ -332,7 +332,9 @@ const HANDLERS: Record<string, (a: Record<string, unknown>) => unknown> = {
   },
   set_preferences: (a) => {
     // Chỉ `language` cần phản hồi thật: đây là cách duy nhất đổi ngôn ngữ trong preview.
-    if (a["language"] === "en" || a["language"] === "vi") settings.language = a["language"];
+    if (a["language"] === "en" || a["language"] === "vi" || a["language"] === "ja") {
+      settings.language = a["language"];
+    }
     return settings;
   },
   clear_cache: () => null,

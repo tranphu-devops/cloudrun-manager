@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { StatTile } from "../../components/charts";
 import { Badge, Button, EmptyState, ErrorBox, Input, Loading, Notice, Select, useToast } from "../../components/ui";
-import { useT } from "../../lib/i18n";
+import { useT, useTNode } from "../../lib/i18n";
 import { apiV2, asCmdError } from "../../lib/ipc";
 import type { CmdError, MarkAction, Recommendation, RecommendationsResult } from "../../lib/types";
 
@@ -51,6 +51,7 @@ export function RecommendationsPage({
   readOnly: boolean;
 }) {
   const t = useT();
+  const tNode = useTNode();
   const qc = useQueryClient();
   const toast = useToast();
   const [filter, setFilter] = useState("");
@@ -113,18 +114,21 @@ export function RecommendationsPage({
 
       {q.data?.apiDisabled && (
         <Notice tone="warning" icon="⚠">
-          {t(
-            "Recommender API chưa được bật trên project này nên danh sách có thể thiếu. Bật tại",
-          )}{" "}
-          <a
-            className="underline"
-            href={`https://console.cloud.google.com/apis/library/recommender.googleapis.com?project=${encodeURIComponent(project)}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            API Library
-          </a>
-          .
+          {tNode(
+            "Recommender API chưa được bật trên project này nên danh sách có thể thiếu. Bật tại {link}.",
+            {
+              link: (
+                <a
+                  className="underline"
+                  href={`https://console.cloud.google.com/apis/library/recommender.googleapis.com?project=${encodeURIComponent(project)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  API Library
+                </a>
+              ),
+            },
+          )}
         </Notice>
       )}
 
