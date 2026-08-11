@@ -1,126 +1,143 @@
 # Cloud Run Cockpit
 
-App desktop (Tauri 2 + React) để vận hành Cloud Run trên GCP mà không phải mở Console:
-xem nhanh service, sửa env, xem secret, xem log, xem tải và số instance, đổi được project.
+**English** · [Tiếng Việt](README.vi.md)
+
+A desktop app (Tauri 2 + React) for operating Cloud Run on GCP without opening the Console:
+browse services, edit env vars, inspect secrets, tail logs, watch load and instance counts,
+switch projects.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Cloud Run Cockpit  [example-project ▾] ?CHƯA GẮN NHÃN   🔒 Chỉ đọc  ⟳ │
+│ Cloud Run Cockpit  [example-project ▾] ?UNLABELED      🔒 Read-only ⟳ │
 ├──────────────────┬───────────────────────────────────────────────────┤
-│ 🔍 tìm service   │ ● api-gateway        asia-northeast1 · Tokyo      │
-│                  │ ┌─────┬────┬───────┬───────┬────┬───┬──────────┐  │
-│ ● api-gateway    │ │Tổng │Env │Scaling│Secrets│Tải │Log│Revisions │  │
-│   6.0 inst 31rps │ └─────┴────┴───────┴───────┴────┴───┴──────────┘  │
-│ ✕ notifier       │  Instance 6.0   RPS 31   5xx 0.00%   conc 80      │
-│   ⚠ 13.2% lỗi    │  ┌── chart số instance ──┐ ┌── chart rps ──┐      │
+│ 🔍 find service  │ ● api-gateway        asia-northeast1 · Tokyo      │
+│                  │ ┌────────┬───┬───────┬───────┬────┬───┬────────┐  │
+│ ● api-gateway    │ │Overview│Env│Scaling│Secrets│Load│Log│Revision│  │
+│   6.0 inst 31rps │ └────────┴───┴───────┴───────┴────┴───┴────────┘  │
+│ ✕ notifier       │  Instances 6.0  RPS 31  5xx 0.00%   conc 80       │
+│   ⚠ 13.2% errors │  ┌── instance count ────┐ ┌── rps ────────┐       │
 │ ● billing   📌   │  └───────────────────────┘ └───────────────┘      │
 └──────────────────┴───────────────────────────────────────────────────┘
 ```
 
-## Bắt đầu
+> **Note on language.** Documentation is available in English and Vietnamese. Code comments,
+> error messages and UI strings are written in **Vietnamese** — this is an internal operations
+> tool for a Vietnamese-speaking team, and the error messages are tuned to tell an operator
+> *what to do next*, which is worth more than uniformity.
+
+## Getting started
 
 ```bash
 npm install
-npm run app:dev      # chạy app (cần Rust + gcloud, xem docs/SETUP.md)
-npm run preview:ui   # xem/sửa UI với dữ liệu giả, KHÔNG cần gcloud và không đụng GCP
+npm run app:dev      # run the app (needs Rust + gcloud, see docs/SETUP.md)
+npm run preview:ui   # browse/edit the UI with fake data — no gcloud, never touches GCP
 ```
 
-Chi tiết cài đặt: [`docs/SETUP.md`](docs/SETUP.md) · Quyền GCP cần có: [`docs/IAM.md`](docs/IAM.md)
+Setup details: [`docs/SETUP.md`](docs/SETUP.md) · Required GCP permissions: [`docs/IAM.md`](docs/IAM.md)
 
-## Kiến trúc
+## Architecture
 
 ```
 WebView (React + TS + Tailwind + TanStack Query + Recharts)
-    │  Tauri IPC — chỉ đúng tập #[tauri::command] được khai báo
-Rust core (src-tauri)  — auth guard, audit log, cấu hình
+    │  Tauri IPC — only the declared set of #[tauri::command]
+Rust core (src-tauri)  — auth guard, audit log, configuration
     │
-crates/gcp             — client GCP thuần Rust, KHÔNG phụ thuộc Tauri
+crates/gcp             — pure-Rust GCP client, NO Tauri dependency
     ├─ Cloud Run Admin API v2      services, revisions, patch
-    ├─ Cloud Monitoring API v3     biểu đồ tải, số instance
-    ├─ Cloud Logging API v2        log (polling)
+    ├─ Cloud Monitoring API v3     load charts, instance count
+    ├─ Cloud Logging API v2        logs (polling)
     ├─ Secret Manager API v1       metadata + reveal
-    └─ Resource Manager API v3     danh sách project, kiểm tra quyền
+    └─ Resource Manager API v3     project list, permission checks
 ```
 
-Hai quyết định định hình cả repo:
+Two decisions shape the whole repo:
 
-**1. Toàn bộ credential và network call nằm trong Rust.** Frontend không được cấp plugin
-`shell`, `fs`, hay `http` (xem `src-tauri/capabilities/default.json`), nên một lỗ XSS ở
-webview không leo thang thành chạy lệnh hay đọc ổ đĩa.
+**1. Every credential and network call lives in Rust.** The frontend is not granted the
+`shell`, `fs`, or `http` plugins (see `src-tauri/capabilities/default.json`), so an XSS hole
+in the webview cannot escalate into running commands or reading the disk.
 
-**2. `crates/gcp` cố tình không phụ thuộc Tauri.** Nhờ vậy toàn bộ logic rủi ro
-(read-modify-write service, parse env, diff, validate) chạy được dưới `cargo test` trên
-bất kỳ máy nào, không cần dựng webview. Đây là nơi có 113 test.
+**2. `crates/gcp` deliberately does not depend on Tauri.** That way all the risky logic
+(read-modify-write of a service, env parsing, diffing, validation) runs under `cargo test` on
+any machine, with no webview to stand up. That is where ~200 of the tests live.
 
-## Ba cạm bẫy mà code này xử lý sẵn
+## Three traps this code already handles
 
-Đọc `crates/gcp/src/mutate.rs` và `crates/gcp/tests/mutate_test.rs` trước khi sửa đường ghi.
+Read `crates/gcp/src/mutate.rs` and `crates/gcp/tests/mutate_test.rs` before touching the
+write path.
 
-| Bẫy | Hậu quả nếu làm sai | Cách xử lý |
+| Trap | What goes wrong | How it is handled |
 |---|---|---|
-| `env[]` trộn `{name,value}` và `{name,valueSource.secretKeyRef}` | Editor kiểu `Map<String,String>` biến `DB_PASSWORD` thành chuỗi rỗng → **service mất kết nối DB** | Clone nguyên object gốc của secret-ref, chỉ chạm `version`. UI render secret-ref ở dạng khoá. |
-| `template.revision` còn trong payload PATCH | Cloud Run từ chối: "Revision X already exists" | `sanitize_for_patch` xoá field này để Cloud Run tự đánh số tiếp |
-| `traffic` ghim vào revision cụ thể | Sửa env "thành công" nhưng revision mới **không nhận traffic** → thay đổi im lặng vô hiệu | `is_traffic_pinned` phát hiện, UI cảnh báo vàng ở tab Env và Overview |
+| `env[]` mixes `{name,value}` and `{name,valueSource.secretKeyRef}` | An editor modelled as `Map<String,String>` turns `DB_PASSWORD` into an empty string → **the service loses its database connection** | Clone the secret-ref object verbatim, touch only `version`. The UI renders secret-refs as locked. |
+| `template.revision` left in the PATCH payload | Cloud Run rejects it: "Revision X already exists" | `sanitize_for_patch` strips the field so Cloud Run keeps numbering |
+| `traffic` pinned to a specific revision | Editing env "succeeds" but the new revision **receives no traffic** → the change is silently void | `is_traffic_pinned` detects it; the UI shows an amber warning on the Env and Overview tabs |
 
-Ngoài ra: `PATCH` luôn gửi `etag` để chặn ghi đè mất thay đổi của người khác (409 thì báo
-lỗi, **không** tự retry), và luôn GET lại bản tươi trước khi ghi thay vì dùng cache.
+Beyond that: `PATCH` always sends an `etag` so you cannot clobber someone else's change (a
+409 surfaces as an error and is **never** auto-retried), and the app always re-GETs a fresh
+copy before writing instead of trusting the cache.
 
-## Lớp an toàn khi ghi
+## Safety layers on the write path
 
-1. **Read-only mặc định BẬT.** Phải tắt thủ công. File cấu hình hỏng → về mặc định, tức là
-   read-only bật lại.
-2. **Project gắn nhãn `prod` hoặc chưa gắn nhãn** → phải gõ đúng tên service mới ghi được.
-   Kiểm ở tầng Rust (`AppState::guard_write`), không chỉ khoá nút ở UI.
-3. **Diff bắt buộc** trước khi apply, kèm tên revision dự kiến.
-4. **Dry-run** qua `validateOnly=true`: Cloud Run xác nhận cấu hình mà không tạo revision.
-5. **Audit log JSONL** trên máy — mọi thao tác ghi và mọi lần xem secret, kèm diff, kể cả
-   khi thất bại. Không bao giờ ghi giá trị secret.
+1. **Read-only is ON by default.** You have to turn it off deliberately. A corrupt config file
+   falls back to defaults — which means read-only turns back on.
+2. **Projects labelled `prod`, or not labelled at all** → you must type the service name to
+   confirm. Enforced in Rust (`AppState::guard_write`), not just by disabling a button.
+3. **A diff is mandatory** before applying, together with the expected revision name.
+4. **Dry-run** via `validateOnly=true`: Cloud Run validates the config without creating a
+   revision.
+5. **A local JSONL audit log** — every write and every secret reveal, with the diff, including
+   the failures. It never records secret values.
 
-## Secret
+## Secrets
 
-Mặc định chỉ hiện metadata. Reveal cần bấm nút, tự ẩn sau 30 giây (có đếm ngược), copy thì
-tự xoá clipboard sau 60 giây. Giá trị secret không đi qua cache và bọc trong type `Secret`
-có `Debug` redact + `Drop` zeroize, nên không rò qua log hay panic message.
+Only metadata is shown by default. Revealing takes a deliberate click, auto-hides after 30
+seconds (with a countdown), and copying clears the clipboard after 60 seconds. Secret values
+skip the cache entirely and are wrapped in a `Secret` type with a redacting `Debug` and a
+zeroizing `Drop`, so they do not leak through logs or panic messages.
 
-## Về metric
+## About metrics
 
-Monitoring API **không báo lỗi khi tên metric sai** — nó trả về series rỗng. Vẽ đường phẳng
-ở 0 khi đó sẽ bị đọc thành "service không có tải", sai lệch nguy hiểm hơn là không có chart.
-Nên:
+The Monitoring API **does not report an error for a wrong metric name** — it returns an empty
+series. Drawing a flat line at 0 in that case reads as "this service has no traffic", which is
+more dangerous than showing no chart at all. So:
 
-- `ChartData.unavailable` phân biệt rõ "không lấy được" với "có dữ liệu và bằng 0"
-- Cài đặt → **Đối chiếu với metricDescriptors** kiểm tra catalog với project thật
-- Sidebar dùng **một** truy vấn gộp theo `service_name` cho cả project, không phải một
-  truy vấn mỗi service (project cỡ ~100 service sẽ đụng quota ngay nếu làm kiểu vòng lặp)
+- `ChartData.unavailable` distinguishes "could not fetch" from "fetched, and it is zero"
+- Settings → **Verify against metricDescriptors** checks the catalog against a real project
+- The sidebar uses **one** query grouped by `service_name` for the whole project, not one query
+  per service (a project with ~100 services would hit the Monitoring API quota immediately)
 
-## Kiểm thử
+## Tests
 
 ```bash
-cd crates/gcp && cargo test && cargo clippy --all-targets   # 113 test
-cd src-tauri  && cargo test && cargo clippy --all-targets   #  24 test
-npm run typecheck
-npm run preview:ui   # xem UI với dữ liệu giả
+cd crates/gcp && cargo test && cargo clippy --all-targets   # 200 tests, must be 0 warnings
+cd ../src-tauri && cargo test && cargo clippy --all-targets #  50 tests, must be 0 warnings
+cd .. && npm run typecheck
+npm run preview:ui   # browse the UI with fake data
 ```
 
-## Phạm vi v1
+## Scope
 
-Có: xem service/revision/traffic/condition, sửa env, sửa scaling & resource, xem secret,
-xem log, xem tải, đổi project, gắn nhãn môi trường, audit log.
+In scope: view services/revisions/traffic/conditions, edit env, edit scaling & resources, view
+secrets, tail logs, watch load, switch projects, label environments, audit log. Since v2 also:
+Cloud Run Jobs overview + manual run + Scheduler pause/resume, a statistics grid, cost
+estimation, and Recommender insights.
 
-Chưa có (cố ý): deploy image mới, chuyển traffic, rollback revision, sửa giá trị secret,
-sửa IAM/VPC/Cloud SQL, Cloud Run Jobs. Bốn cái đầu ảnh hưởng trực tiếp tới traffic đang
-chạy nên để trên Console, nơi có sẵn xác nhận và audit của Google.
+Deliberately out of scope: deploying a new image, shifting traffic, rolling back a revision,
+editing secret values, editing IAM/VPC/Cloud SQL. Those affect live traffic or security
+directly, so they belong in the Console where Google already provides confirmation and audit.
+Job definitions are not editable here either, and recommendations are only marked, never
+auto-applied.
 
-## Cấu hình trước khi dùng thật
+## Configure before real use
 
-Repo không chứa project ID, email hay service account của bất kỳ hạ tầng thật nào — mọi ví dụ
-dùng placeholder `example-project`, `example-prod`, `example-staging`… Trước khi chạy:
+The repo contains no project ID, email or service account belonging to any real
+infrastructure — every example uses placeholders such as `example-project`, `example-prod`,
+`example-staging`. Before you run it:
 
-1. Sửa `DEFAULT_ALLOWED_PROJECT` trong `src-tauri/src/config.rs`, **hoặc** điền project ID
-   thật ở **⚙ Cài đặt → Project được phép thao tác**. Để nguyên placeholder thì app chặn mọi
-   thao tác (fail an toàn).
-2. Đổi `identifier` trong `src-tauri/tauri.conf.json` nếu bạn build bản cài riêng.
+1. Change `DEFAULT_ALLOWED_PROJECT` in `src-tauri/src/config.rs`, **or** enter your real
+   project ID under **⚙ Settings → Allowed projects**. Left at the placeholder, the app blocks
+   every operation — that is the intended fail-safe.
+2. Change `identifier` in `src-tauri/tauri.conf.json` if you build your own installer.
 
-## Giấy phép
+## License
 
 [MIT](LICENSE).

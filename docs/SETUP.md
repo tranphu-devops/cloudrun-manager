@@ -1,79 +1,85 @@
-# Cài đặt & chạy
+# Setup & run
 
-Hướng dẫn cho máy Windows (môi trường chính). macOS ghi ở cuối.
+**English** · [Tiếng Việt](SETUP.vi.md)
 
-## 1. Yêu cầu
+Written for Windows (the primary environment). macOS is covered at the end.
 
-| Thứ | Ghi chú |
+## 1. Requirements
+
+| Thing | Notes |
 |---|---|
-| **Rust** (stable) | https://rustup.rs — bạn đã có `~/.cargo` và `~/.rustup` nên có thể chỉ cần `rustup update` |
-| **Node.js 20+** | đã có |
-| **Microsoft C++ Build Tools** | Tauri cần MSVC linker. Cài "Desktop development with C++" từ Visual Studio Installer |
-| **WebView2 Runtime** | Windows 11 đã có sẵn |
-| **Google Cloud SDK** | `gcloud` — app dùng nó để lấy access token |
+| **Rust** (stable) | https://rustup.rs — if you already have `~/.cargo` and `~/.rustup`, `rustup update` may be all you need |
+| **Node.js 20+** | |
+| **Microsoft C++ Build Tools** | Tauri needs the MSVC linker. Install "Desktop development with C++" from the Visual Studio Installer |
+| **WebView2 Runtime** | Already present on Windows 11 |
+| **Google Cloud SDK** | `gcloud` — the app uses it to obtain access tokens |
 
-Kiểm tra nhanh:
+Quick check:
 
 ```powershell
 rustc --version
 node --version
 gcloud --version
-gcloud auth list          # phải thấy account của bạn ở trạng thái ACTIVE
+gcloud auth list          # your account must show as ACTIVE
 ```
 
-## 2. Đăng nhập gcloud
+## 2. Sign in to gcloud
 
-App **không** tự làm OAuth flow — nó thừa hưởng account đang active của `gcloud`.
+The app does **not** run its own OAuth flow — it inherits whichever account `gcloud` has
+active.
 
 ```powershell
 gcloud auth login
 gcloud config set project PROJECT_ID
 ```
 
-Kiểm tra lấy được token:
+Check that a token can be minted:
 
 ```powershell
 gcloud auth print-access-token
 ```
 
-Nếu lệnh này chạy được thì app chạy được.
+If that command works, the app works.
 
 ### Impersonation
 
-Nếu team dùng impersonation, app tự thừa hưởng:
+If your team uses impersonation, the app inherits it automatically:
 
 ```powershell
 gcloud config set auth/impersonate_service_account DEPLOYER_SA_EMAIL
 ```
 
-Khi đó thanh phụ dưới header sẽ hiện badge **Impersonating** kèm tên SA. Điều này quan trọng
-trước khi bấm sửa gì: bạn phải biết mình đang là ai.
+The sub-header then shows an **Impersonating** badge with the SA name. That matters before you
+click anything that writes: you need to know who you currently are.
 
-### Service account — nhập thẳng trong app (v2)
+### Service account — import directly into the app (v2)
 
-Từ v2, app tự nhận diện SA và tự lấy token, **không cần** đi qua gcloud:
+Since v2 the app can read an SA key and mint tokens itself, with **no** gcloud involved:
 
-1. Mở **⚙ Cài đặt → Xác thực (Service Account) → Nhập service account**.
-2. Chọn file JSON key của SA, đặt **passphrase** cho vault, bấm *Tạo vault & nhập SA*.
-3. Lần mở app sau sẽ có màn nhập passphrase để mở khoá (có nút *Bỏ qua — dùng gcloud CLI như
-   cũ* nếu muốn quay lại đường gcloud).
+1. Open **⚙ Settings → Authentication (Service Account) → Import service account**.
+2. Pick the SA's JSON key file, set a **passphrase** for the vault, click *Create vault &
+   import SA*.
+3. The next launch shows an unlock screen for the passphrase (with a *Skip — keep using the
+   gcloud CLI* button if you want to fall back).
 
-Cơ chế: app tự sign JWT RS256 bằng key rồi đổi lấy access token (pure-Rust `rsa`+`sha2`, không
-cần C compiler). Key riêng được mã hoá bằng passphrase (Argon2id + AES-256-GCM) rồi lưu trên
-máy — **không** gửi đi đâu, **không** nằm trong `settings.json`, audit log, hay clipboard.
-Passphrase không lưu ở đâu cả, kể cả dạng hash.
+How it works: the app signs an RS256 JWT with the key and exchanges it for an access token
+(pure-Rust `rsa`+`sha2`, no C compiler needed). The private key is encrypted with your
+passphrase (Argon2id + AES-256-GCM) and stored locally — it is **never** sent anywhere and
+**never** lands in `settings.json`, the audit log, or the clipboard. The passphrase itself is
+stored nowhere at all, not even hashed.
 
-Thứ tự chọn nguồn token: **Service Account (vault) → gcloud CLI → ADC**. Khi đang dùng SA,
-badge nguồn trong Cài đặt hiện *Service Account (từ vault)*.
+Token source precedence: **Service Account (vault) → gcloud CLI → ADC**. While an SA is in
+use, the source badge in Settings reads *Service Account (from vault)*.
 
-Vẫn có thể dùng cách cũ (nạp key vào gcloud) nếu không muốn dùng vault:
+The old approach (loading the key into gcloud) still works if you would rather not use the
+vault:
 
 ```powershell
 gcloud auth activate-service-account --key-file=C:\path\to\key.json
 gcloud config set account sa-name@project.iam.gserviceaccount.com
 ```
 
-## 3. Enable API trên project
+## 3. Enable APIs on the project
 
 ```powershell
 gcloud services enable ^
@@ -85,93 +91,97 @@ gcloud services enable ^
   --project=PROJECT_ID
 ```
 
-API chưa enable sẽ trả **403** (không phải 404) — app nhận diện và hiện đúng lệnh cần chạy,
-nhưng làm trước thì đỡ một vòng.
+A disabled API returns **403** (not 404) — the app recognises this and prints the exact command
+to run, but doing it up front saves a round trip.
 
-## 4. Chạy
+## 4. Run
 
 ```powershell
 npm install
 npm run app:dev
 ```
 
-Lần đầu cargo build mất khoảng 3–8 phút (Tauri + reqwest + rustls). Lần sau vài giây.
+The first cargo build takes roughly 3–8 minutes (Tauri + reqwest + rustls). Later builds take
+seconds.
 
-Build bản cài:
+Build an installer:
 
 ```powershell
 npm run app:build
-# đầu ra: src-tauri/target/release/bundle/nsis/*.exe  và  .../msi/*.msi
+# output: src-tauri/target/release/bundle/nsis/*.exe  and  .../msi/*.msi
 ```
 
-NSIS được cấu hình `installMode: currentUser` nên không cần quyền admin để cài.
+NSIS is configured with `installMode: currentUser`, so installing does not require admin
+rights.
 
-## 5. Làm UI không cần GCP
+## 5. Work on the UI without GCP
 
 ```powershell
 npm run preview:ui     # http://localhost:1422
 ```
 
-Chế độ này thay tầng IPC bằng mock trong `preview/mock-core.ts` (dữ liệu hư cấu: 10 service,
-có service lỗi, có service bị ghim traffic, có một metric cố tình "không lấy được"). Dùng để
-sửa giao diện mà không phải đăng nhập và không đụng vào project thật.
+This mode replaces the IPC layer with the mock in `preview/mock-core.ts` (fictional data: 10
+services, one that fails to start, one with pinned traffic, and one metric deliberately marked
+"could not fetch"). Use it to change the UI without signing in and without touching a real
+project.
 
-## 6. Vị trí file trên máy
+## 6. Local file locations
 
-| File | Đường dẫn Windows |
+| File | Windows path |
 |---|---|
-| Cấu hình | `%APPDATA%\dev.cloudrun.cockpit\settings.json` |
+| Configuration | `%APPDATA%\dev.cloudrun.cockpit\settings.json` |
 | Audit log | `%APPDATA%\dev.cloudrun.cockpit\audit.jsonl` |
 
-Xem đường dẫn thật trong app: **⚙ Cài đặt → Audit log → Hiện đường dẫn file**.
+See the real path inside the app: **⚙ Settings → Audit log → Show file path**.
 
-Đọc audit log bằng PowerShell:
+Read the audit log with PowerShell:
 
 ```powershell
 Get-Content "$env:APPDATA\dev.cloudrun.cockpit\audit.jsonl" -Tail 20 | ConvertFrom-Json |
   Format-Table ts, action, project, service, outcome
 ```
 
-## 7. Việc cần làm ngay lần đầu chạy
+## 7. Do these on first run
 
-1. **Gắn nhãn môi trường cho các project.** App đoán nhãn từ tên: có `prod`/`master`/`live`
-   → prod, có `stg`/`staging`/`uat` → staging, có `dev`/`sandbox`/`test` → dev. Project **không
-   chứa từ khoá nào** (ví dụ `example-project`, `quiet-meadow-123456-a7`) để `unknown`, và
-   unknown bị xử lý như prod (phải gõ tên service mới ghi được). Gắn nhãn Dev cho project thử
-   nghiệm để bỏ bước đó.
+1. **Label your projects.** The app guesses a label from the name: `prod`/`master`/`live` →
+   prod, `stg`/`staging`/`uat` → staging, `dev`/`sandbox`/`test` → dev. A project with **none**
+   of those keywords (say `example-project`, or `quiet-meadow-123456-a7`) stays `unknown`, and
+   unknown is treated like prod — you must type the service name before writing. Label your
+   scratch project as Dev to skip that step.
 
-   Nhánh đoán "dev" cố tình hẹp: đoán sai thành dev là mất một lớp bảo vệ trên môi trường có
-   thể là production.
+   The "dev" branch is deliberately narrow: guessing dev wrongly removes a safety layer from
+   what might be production.
 
-2. **Chạy Cài đặt → Đối chiếu với metricDescriptors.** Xác nhận 8 tên metric trong code
-   khớp với project thật. Metric sai tên không gây lỗi HTTP, chỉ trả series rỗng.
+2. **Run Settings → Verify against metricDescriptors.** Confirms that the 8 metric names in the
+   code match the project. A wrong metric name causes no HTTP error, just an empty series.
 
-3. **Giữ Read-only cho tới khi thực sự cần sửa.** Nó mặc định bật.
+3. **Keep Read-only on until you actually need to write.** It defaults to on.
 
-4. **Đặt khoá project (v2).** App ship với allowlist chứa đúng một placeholder
-   `example-project`, nên **lần đầu chạy sẽ chặn hết** cho tới khi bạn điền project ID thật
-   ở **⚙ Cài đặt → Project được phép thao tác** (toggle *Đang khoá*). Đây là lớp bảo vệ ở
-   tầng Rust để app không chạm nhầm prod/staging — kể cả khi đổi dropdown project hay dùng
-   devtools. Chỉ để đúng những project bạn thật sự muốn thao tác.
+4. **Set the project lock (v2).** The app ships with an allowlist containing a single
+   placeholder, `example-project`, so **the first run blocks everything** until you enter your
+   real project ID under **⚙ Settings → Allowed projects** (the *Locked* toggle). This is a
+   Rust-level guard that keeps the app off the wrong prod/staging project — even if you change
+   the project dropdown or poke at devtools. Keep only the projects you genuinely intend to
+   touch.
 
-### Các màn của v2
+### The v2 screens
 
-Thanh điều hướng dọc bên trái có 5 màn: **Service** (như v1), **Thống kê** (gridview toàn bộ
-service), **Jobs** (Cloud Run Jobs + Scheduler, cảnh báo cron chạy loạn và env plain trông
-như secret), **Chi phí** (ước lượng — luôn kèm 7 nguồn sai số), **Gợi ý** (Recommender, chỉ
-đánh dấu trạng thái, không tự áp dụng).
+The vertical nav on the left has five screens: **Services** (as in v1), **Statistics** (a grid
+over every service), **Jobs** (Cloud Run Jobs + Scheduler, with warnings for runaway crons and
+plaintext env vars that look like secrets), **Cost** (an estimate — always accompanied by its 7
+sources of error), and **Insights** (Recommender; marks state only, never auto-applies).
 
-## Lỗi hay gặp
+## Common problems
 
-| Triệu chứng | Nguyên nhân & cách sửa |
+| Symptom | Cause & fix |
 |---|---|
-| "Không tìm thấy gcloud CLI trên máy" | `gcloud` trên Windows là `gcloud.cmd`. App đã dò `gcloud.cmd`/`.exe`/`.bat` trong `PATH` + các thư mục cài mặc định. Nếu vẫn không thấy, mở terminal mới rồi chạy `where gcloud` và kiểm tra đường dẫn đó có trong `PATH` của user (không chỉ của session hiện tại). |
-| Nháy cửa sổ console đen | Không nên xảy ra — app spawn gcloud với `CREATE_NO_WINDOW`. Nếu thấy, báo lại kèm thao tác đang làm. |
-| 403 khi sửa env, dù có `roles/run.developer` | Thiếu `iam.serviceAccounts.actAs` trên runtime SA. Xem [`IAM.md`](IAM.md) — app hiện sẵn lệnh cần chạy. |
-| 409 / "Service đã bị thay đổi" | Người khác vừa deploy. Bấm Reload rồi áp lại sửa đổi. App cố ý không tự merge. |
-| Chart trống nhưng service đang chạy | Xem note dưới chart. Nếu là "Không lấy được metric" → thiếu `roles/monitoring.viewer`. Nếu là "Không có dữ liệu trong khoảng này" → Cloud Run chỉ ghi metric khi có hoạt động. |
-| Không thấy service nào | Kiểm tra project ID. App list mọi region qua `locations/-` nên không phải vấn đề region. |
-| Build lỗi `link.exe not found` | Thiếu MSVC Build Tools, xem mục 1. |
+| "gcloud CLI not found on this machine" | On Windows `gcloud` is `gcloud.cmd`. The app probes `gcloud.cmd`/`.exe`/`.bat` across `PATH` plus the default install directories. If it still cannot find it, open a fresh terminal, run `where gcloud`, and check that path is in the *user* `PATH` (not just the current session's). |
+| A black console window flashes | Should not happen — the app spawns gcloud with `CREATE_NO_WINDOW`. If you see it, report what you were doing. |
+| 403 when editing env, despite `roles/run.developer` | Missing `iam.serviceAccounts.actAs` on the runtime SA. See [`IAM.md`](IAM.md) — the app prints the exact command. |
+| 409 / "the service changed" | Someone else just deployed. Hit Reload and re-apply your change. The app deliberately does not auto-merge. |
+| Empty chart while the service is running | Read the note under the chart. "Could not fetch metric" → missing `roles/monitoring.viewer`. "No data in this window" → Cloud Run only writes metrics when there is activity. |
+| No services listed | Check the project ID. The app lists every region via `locations/-`, so it is not a region problem. |
+| Build fails with `link.exe not found` | Missing MSVC Build Tools, see section 1. |
 
 ## macOS
 
@@ -181,5 +191,5 @@ brew install --cask google-cloud-sdk
 npm install && npm run app:dev
 ```
 
-`gcloud` không có đuôi `.cmd` trên macOS; app đã xử lý cả hai. Đường dẫn dò thêm gồm
-`/opt/homebrew/share/google-cloud-sdk/bin` và `~/google-cloud-sdk/bin`.
+`gcloud` has no `.cmd` suffix on macOS; the app handles both. Extra probed paths include
+`/opt/homebrew/share/google-cloud-sdk/bin` and `~/google-cloud-sdk/bin`.

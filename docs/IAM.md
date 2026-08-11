@@ -1,6 +1,8 @@
-# Quyền GCP cần có
+# Required GCP permissions
 
-## API phải enable
+**English** · [Tiếng Việt](IAM.vi.md)
+
+## APIs that must be enabled
 
 ```bash
 gcloud services enable \
@@ -14,43 +16,44 @@ gcloud services enable \
   --project=PROJECT_ID
 ```
 
-Hai API cuối (`cloudscheduler`, `recommender`) là cho v2 (màn Jobs và màn Gợi ý). Nếu chưa
-enable, app không chết — màn Jobs vẫn hiện job nhưng cột lịch báo "thiếu dữ liệu Scheduler",
-màn Gợi ý hiện thông báo API chưa bật kèm link enable.
+The last two (`cloudscheduler`, `recommender`) are for v2 (the Jobs and Insights screens).
+Without them the app still works — the Jobs screen lists jobs but the schedule column reports
+"Scheduler data unavailable", and the Insights screen shows an API-disabled notice with a link
+to enable it.
 
-API chưa enable trả về **403**, không phải 404 — app nhận diện trường hợp này và hiện đúng
-lệnh cần chạy.
+A disabled API returns **403**, not 404 — the app recognises this case and prints the exact
+command to run.
 
-## Role theo từng tính năng
+## Roles per feature
 
-| Tính năng trong app | Permission | Role gợi ý |
+| Feature in the app | Permission | Suggested role |
 |---|---|---|
-| Danh sách project ở dropdown | `resourcemanager.projects.list` | `roles/browser` (cấp ở organization/folder) |
-| Sidebar + tab Tổng quan/Revisions | `run.services.list`, `run.services.get`, `run.revisions.list` | `roles/run.viewer` |
-| Sửa env, sửa scaling | `run.services.update` **+ `iam.serviceAccounts.actAs`** | `roles/run.developer` + xem mục dưới |
-| Tab Tải (biểu đồ) | `monitoring.timeSeries.list`, `monitoring.metricDescriptors.list` | `roles/monitoring.viewer` |
-| Tab Log | `logging.logEntries.list` | `roles/logging.viewer` |
-| Danh sách secret + version | `secretmanager.secrets.list`, `secretmanager.versions.list` | `roles/secretmanager.viewer` |
-| Xem **giá trị** secret | `secretmanager.versions.access` | `roles/secretmanager.secretAccessor` |
-| Màn Jobs — xem job + lịch (v2) | `run.jobs.list`, `run.jobs.get`, `run.executions.list`, `cloudscheduler.jobs.list` | `roles/run.viewer` + `roles/cloudscheduler.viewer` |
-| Chạy tay job (v2) | `run.jobs.run` **+ `iam.serviceAccounts.actAs`** trên SA của job | `roles/run.developer` + xem mục actAs |
-| Pause/resume lịch (v2) | `cloudscheduler.jobs.pause`, `cloudscheduler.jobs.resume` | `roles/cloudscheduler.admin` |
-| Màn Chi phí (v2) | như tab Tải — dùng metric tải để ước lượng | `roles/monitoring.viewer` |
-| Màn Gợi ý — xem + đánh dấu (v2) | `recommender.*.list`, `recommender.*.update` | `roles/recommender.viewer` (xem) / `roles/recommender.*Admin` (đánh dấu) |
+| Project dropdown | `resourcemanager.projects.list` | `roles/browser` (granted at organization/folder level) |
+| Sidebar + Overview/Revisions tabs | `run.services.list`, `run.services.get`, `run.revisions.list` | `roles/run.viewer` |
+| Editing env and scaling | `run.services.update` **+ `iam.serviceAccounts.actAs`** | `roles/run.developer` + see below |
+| Load tab (charts) | `monitoring.timeSeries.list`, `monitoring.metricDescriptors.list` | `roles/monitoring.viewer` |
+| Logs tab | `logging.logEntries.list` | `roles/logging.viewer` |
+| Secret list + versions | `secretmanager.secrets.list`, `secretmanager.versions.list` | `roles/secretmanager.viewer` |
+| Revealing a secret **value** | `secretmanager.versions.access` | `roles/secretmanager.secretAccessor` |
+| Jobs screen — jobs + schedules (v2) | `run.jobs.list`, `run.jobs.get`, `run.executions.list`, `cloudscheduler.jobs.list` | `roles/run.viewer` + `roles/cloudscheduler.viewer` |
+| Running a job manually (v2) | `run.jobs.run` **+ `iam.serviceAccounts.actAs`** on the job's SA | `roles/run.developer` + see the actAs section |
+| Pause/resume a schedule (v2) | `cloudscheduler.jobs.pause`, `cloudscheduler.jobs.resume` | `roles/cloudscheduler.admin` |
+| Cost screen (v2) | same as the Load tab — it estimates from load metrics | `roles/monitoring.viewer` |
+| Insights screen — view + mark (v2) | `recommender.*.list`, `recommender.*.update` | `roles/recommender.viewer` (view) / `roles/recommender.*Admin` (mark) |
 
-App tự kiểm tra bằng `projects:testIamPermissions` khi bạn chọn project, và hiện danh sách
-thiếu ở thanh phụ dưới header. Nếu bản thân lệnh kiểm tra cũng bị chặn, app chuyển sang chế
-độ lạc quan (không khoá tính năng nào) — vì đoán "không có quyền" sẽ làm app thành vô dụng
-với người thật sự có quyền, còn đoán "có quyền" thì tệ nhất là nhận một lỗi 403 đã được diễn
-giải rõ ràng.
+The app checks these with `projects:testIamPermissions` when you select a project and lists
+what is missing in the sub-header. If the check itself is blocked, the app switches to an
+optimistic mode and disables nothing — guessing "no permission" would make the app useless for
+someone who does have permission, whereas guessing "has permission" costs at worst a 403 that
+is already explained clearly.
 
-## `iam.serviceAccounts.actAs` — lỗi 403 hay gặp nhất
+## `iam.serviceAccounts.actAs` — the most common 403
 
-**`roles/run.developer` một mình KHÔNG đủ để tạo revision mới.** Bạn còn phải được phép "đóng
-vai" service account mà service đang chạy dưới danh nghĩa. Message gốc của Google cho lỗi này
-khá mơ hồ, nên app diễn giải sẵn và in ra đúng lệnh cần chạy.
+**`roles/run.developer` alone is NOT enough to create a revision.** You also need permission to
+act as the service account the service runs under. Google's own message for this is vague, so
+the app translates it and prints the command you need.
 
-Tìm runtime SA: tab **Tổng quan → Service account**. Rồi cấp:
+Find the runtime SA on the **Overview → Service account** tab, then grant:
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding RUNTIME_SA_EMAIL \
@@ -59,7 +62,7 @@ gcloud iam service-accounts add-iam-policy-binding RUNTIME_SA_EMAIL \
   --project=PROJECT_ID
 ```
 
-Ví dụ với service `api-gateway` trong project `example-project`:
+For example, with the service `api-gateway` in the project `example-project`:
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding \
@@ -69,66 +72,66 @@ gcloud iam service-accounts add-iam-policy-binding \
   --project=example-project
 ```
 
-Nếu nhiều service dùng cùng một SE thì cấp một lần là xong; nếu mỗi service một SA riêng thì
-phải cấp cho từng SA — hoặc cấp `roles/iam.serviceAccountUser` ở cấp project (rộng hơn, cân
-nhắc theo chính sách).
+If many services share one SA, granting it once is enough; if each service has its own SA you
+must grant it per SA — or grant `roles/iam.serviceAccountUser` at the project level (broader,
+weigh it against your policy).
 
-## Cấu hình khuyến nghị: tách quyền theo môi trường
+## Recommended setup: split permissions by environment
 
-Dùng hai gcloud config, để việc sửa prod là một hành động có chủ đích chứ không phải một cú
-bấm nhầm:
+Use two gcloud configurations so that editing prod is a deliberate act rather than a misclick:
 
 ```bash
-# dev/stg — có quyền ghi
+# dev/stg — write access
 gcloud config configurations create crc-dev
 gcloud config set account YOUR_EMAIL
 gcloud config set project DEV_PROJECT_ID
 
-# prod — chỉ đọc
+# prod — read-only
 gcloud config configurations create crc-prod-ro
 gcloud config set account YOUR_EMAIL
 gcloud config set project PROD_PROJECT_ID
 ```
 
-Đổi qua lại:
+Switch between them:
 
 ```bash
 gcloud config configurations activate crc-dev
 ```
 
-App đọc account/project đang active của gcloud, nên đổi config rồi bấm **Reload** trong app
-là đủ.
+The app reads whichever account/project gcloud has active, so switching configuration and
+hitting **Reload** in the app is enough.
 
-### Cân nhắc không cấp `secretAccessor` trên prod
+### Consider withholding `secretAccessor` on prod
 
-Nếu trên project production account của bạn không có `roles/secretmanager.secretAccessor`,
-app vẫn dùng bình thường: tab Secrets hiện đủ metadata (secret nào, version nào, service nào
-dùng) nhưng nút reveal bị khoá kèm giải thích. Đây là một lựa chọn hợp lý — phần lớn công
-việc vận hành cần biết *service đang trỏ vào secret nào*, không cần biết *giá trị là gì*.
+If your account lacks `roles/secretmanager.secretAccessor` on a production project, the app
+still works normally: the Secrets tab shows full metadata (which secret, which version, which
+service uses it) while the reveal button is disabled with an explanation. That is a reasonable
+trade — most operational work needs to know *which secret a service points at*, not *what the
+value is*.
 
-## Ma trận tối thiểu theo vai
+## Minimum matrix by role
 
-| Vai | Dev/Staging | Production |
+| Role | Dev/Staging | Production |
 |---|---|---|
-| Vận hành hằng ngày (sửa env, scaling) | `run.developer` + `actAs`, `monitoring.viewer`, `logging.viewer`, `secretmanager.viewer` + `secretAccessor` | `run.viewer`, `monitoring.viewer`, `logging.viewer`, `secretmanager.viewer` |
-| Trực sự cố (chỉ điều tra) | `run.viewer`, `monitoring.viewer`, `logging.viewer` | như trên |
-| Được phép sửa prod | thêm `run.developer` + `actAs` trên runtime SA của đúng những service được phép | |
+| Day-to-day operations (edit env, scaling) | `run.developer` + `actAs`, `monitoring.viewer`, `logging.viewer`, `secretmanager.viewer` + `secretAccessor` | `run.viewer`, `monitoring.viewer`, `logging.viewer`, `secretmanager.viewer` |
+| On-call (investigation only) | `run.viewer`, `monitoring.viewer`, `logging.viewer` | same |
+| Allowed to edit prod | plus `run.developer` + `actAs` on the runtime SA of exactly the permitted services | |
 
-Cộng thêm `roles/browser` ở cấp organization hoặc folder để dropdown project hiện đủ.
+Add `roles/browser` at the organization or folder level so the project dropdown is complete.
 
-## Kiểm tra nhanh trước khi báo lỗi
+## Quick checks before filing a bug
 
 ```bash
-# App có list được service không?
+# Can the app list services?
 gcloud run services list --project=PROJECT_ID --format="value(metadata.name)" | head
 
-# Có đọc được metric không?
+# Can it read metrics?
 gcloud auth print-access-token >/dev/null && echo "token OK"
 
-# Có quyền cụ thể nào?
+# Which specific permissions do you hold?
 gcloud projects test-iam-permissions PROJECT_ID \
   --permissions=run.services.update,monitoring.timeSeries.list,logging.logEntries.list,secretmanager.versions.access
 ```
 
-Lệnh cuối trả về đúng những permission bạn *có* — permission không xuất hiện trong output là
-permission đang thiếu.
+That last command returns exactly the permissions you *do* have — anything absent from the
+output is what you are missing.

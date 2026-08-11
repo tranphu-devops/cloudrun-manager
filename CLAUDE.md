@@ -1,282 +1,306 @@
 # CLAUDE.md
 
-Hướng dẫn cho Claude Code khi làm việc trong repo này.
+**English** · [Tiếng Việt](CLAUDE.vi.md)
 
-## Repo này là gì
+Guidance for Claude Code when working in this repo.
 
-App desktop Tauri 2 + React để vận hành Cloud Run trên GCP: xem service, sửa env, sửa
-scaling, xem secret/log/tải/instance, đổi project. Công cụ vận hành nội bộ, chạy trên Windows
-là chính (macOS best-effort). Mã nguồn mở theo giấy phép MIT — xem `LICENSE`.
+## What this repo is
 
-**Ngôn ngữ:** comment trong code, message lỗi, và text UI viết bằng **tiếng Việt**. Tên biến,
-tên hàm, tên file dùng tiếng Anh. Message lỗi phải nói được *phải làm gì tiếp*, không chỉ nói
-*cái gì sai* — xem `crates/gcp/src/error.rs` để thấy chuẩn.
+A Tauri 2 + React desktop app for operating Cloud Run on GCP: browse services, edit env, edit
+scaling, inspect secrets/logs/load/instances, switch projects. An internal operations tool,
+run primarily on Windows (macOS best-effort). Open source under the MIT license — see
+`LICENSE`.
 
-## Vòng verify — chạy trước khi báo xong
+**Language policy:** docs exist in English (`*.md`) and Vietnamese (`*.vi.md`); keep both in
+sync when you change one. Code comments, error messages and UI strings are written in
+**Vietnamese**. Variable, function and file names are English. An error message must say
+*what to do next*, not merely *what went wrong* — see `crates/gcp/src/error.rs` for the
+standard.
+
+## Verify loop — run before reporting done
 
 ```bash
-cd crates/gcp && cargo test && cargo clippy --all-targets   # 199 test, phải 0 warning
-cd ../src-tauri && cargo test && cargo clippy --all-targets #  50 test, phải 0 warning
+cd crates/gcp && cargo test && cargo clippy --all-targets   # 200 tests, must be 0 warnings
+cd ../src-tauri && cargo test && cargo clippy --all-targets #  50 tests, must be 0 warnings
 cd .. && npm run typecheck                                  # tsc --noEmit
-npm run preview:build                                       # bundle được không
+npm run preview:build                                       # does it still bundle
 ```
 
-`cargo test` ở `crates/gcp` là cửa ải quan trọng nhất. Crate đó cố tình **không** phụ thuộc
-Tauri nên toàn bộ logic rủi ro test được mà không cần dựng webview.
+`cargo test` in `crates/gcp` is the gate that matters most. That crate deliberately does
+**not** depend on Tauri, so all the risky logic is testable without standing up a webview.
 
-Xem UI mà không cần GCP: `npm run preview:ui` → http://localhost:1422. Nó thay tầng IPC bằng
-`preview/mock-core.ts` (dữ liệu hư cấu: 10 service, có service lỗi, có service ghim traffic,
-có một metric cố tình "không lấy được"). Sửa UI thì dùng cái này, đừng đi đăng nhập gcloud.
+To see the UI without GCP: `npm run preview:ui` → http://localhost:1422. It swaps the IPC layer
+for `preview/mock-core.ts` (fictional data: 10 services, one failing, one with pinned traffic,
+one metric deliberately marked "could not fetch"). Use this when changing UI; do not go sign
+in to gcloud.
 
-## Bản đồ code
+## Code map
 
 ```
-crates/gcp/                 client GCP thuần Rust — KHÔNG import tauri ở đây
-  src/mutate.rs             ★ read-modify-write service. File rủi ro nhất.
-  src/run.rs                Cloud Run Admin v2: list/get/patch, revisions, chờ operation
-  src/monitoring.rs         Monitoring v3: chart + snapshot tải + usage-by-service cho billing
+crates/gcp/                 pure-Rust GCP client — do NOT import tauri here
+  src/mutate.rs             ★ read-modify-write of a service. The riskiest file.
+  src/run.rs                Cloud Run Admin v2: list/get/patch, revisions, awaiting operations
+  src/monitoring.rs         Monitoring v3: charts + load snapshot + usage-by-service for billing
   src/logging.rs            Logging v2: build filter, parse entry, dedupe
   src/secretmanager.rs      Secret Manager v1
-  src/resourcemanager.rs    list project + testIamPermissions
-  src/auth.rs               TokenProvider: Service Account → gcloud CLI → ADC (theo thứ tự)
-  src/sa.rs                 ★ (v2) parse SA key + tự sign JWT RS256 → đổi lấy token. Pure-Rust rsa+sha2.
-  src/cronlint.rs           (v2) lint cron (minute-wildcard…) + quét env plain trông như secret
-  src/jobs.rs               ★ (v2) Cloud Run Jobs + Scheduler. `build_overview` là fn thuần, test nặng.
-  src/billing.rs            ★ (v2) ước lượng chi phí. `estimate` là fn thuần. Đơn giá + free tier.
-  src/recommender.rs        (v2) Recommender API: list + mark trạng thái (KHÔNG auto-apply)
-  src/secret.rs             newtype Secret: Debug redact + Drop zeroize
-  src/error.rs              ★ map lỗi GCP → hướng dẫn hành động tiếng Việt
-  src/types.ts ↔ types.rs   DTO. Sửa một bên phải sửa bên kia.
-  tests/mutate_test.rs      ★ 46 test, mỗi cái là một cách làm sập service thật
+  src/resourcemanager.rs    project list + testIamPermissions
+  src/auth.rs               TokenProvider: Service Account → gcloud CLI → ADC (in that order)
+  src/sa.rs                 ★ (v2) parse SA key + sign RS256 JWT → exchange for a token. Pure-Rust rsa+sha2.
+  src/cronlint.rs           (v2) cron lint (minute-wildcard…) + scan plaintext env that looks like secrets
+  src/jobs.rs               ★ (v2) Cloud Run Jobs + Scheduler. `build_overview` is a pure fn, heavily tested.
+  src/billing.rs            ★ (v2) cost estimation. `estimate` is a pure fn. Unit prices + free tier.
+  src/recommender.rs        (v2) Recommender API: list + mark state (NO auto-apply)
+  src/secret.rs             Secret newtype: redacting Debug + zeroizing Drop
+  src/error.rs              ★ map GCP errors → actionable Vietnamese guidance
+  src/types.ts ↔ types.rs   DTOs. Change one side, you must change the other.
+  tests/mutate_test.rs      ★ 46 tests, each one a distinct way to break a real service
 
 src-tauri/src/
-  state.rs                  AppState::guard_write (+ guard_project) — cổng duy nhất cho ghi
-  config.rs                 Settings, EnvLabel, suggest_label, allowlist project (project_lock)
-  vault.rs                  ★ (v2) vault mã hoá: Argon2id KDF + AES-256-GCM, header-as-AAD
-  audit.rs                  audit log JSONL (thêm RunJob, SetSchedulePaused, MarkRecommendation)
-  commands/mutate.rs        ★ luồng apply: guard → GET tươi → so etag → patch → audit
-  commands/auth.rs          (v2) import SA vào vault, unlock/lock, allowlist project
-  commands/jobs.rs          (v2) jobs_overview, run_job (chặn nếu đang chạy), set_schedule_paused
+  state.rs                  AppState::guard_write (+ guard_project) — the single gate for writes
+  config.rs                 Settings, EnvLabel, suggest_label, project allowlist (project_lock)
+  vault.rs                  ★ (v2) encrypted vault: Argon2id KDF + AES-256-GCM, header-as-AAD
+  audit.rs                  JSONL audit log (plus RunJob, SetSchedulePaused, MarkRecommendation)
+  commands/mutate.rs        ★ apply flow: guard → fresh GET → compare etag → patch → audit
+  commands/auth.rs          (v2) import SA into the vault, unlock/lock, project allowlist
+  commands/jobs.rs          (v2) jobs_overview, run_job (blocks while running), set_schedule_paused
   commands/insights.rs      (v2) cost_report, recommendations, mark_recommendation
-  capabilities/default.json ★ quyền của frontend. Đừng thêm shell/fs/http vào đây.
+  capabilities/default.json ★ the frontend's permissions. Do not add shell/fs/http here.
 
 src/                        React
-  lib/types.ts              ★ mirror của crates/gcp/src/types.rs
-  lib/ipc.ts                wrapper invoke (api + apiV2). Command snake_case, tham số camelCase.
-  components/NavRail.tsx    (v2) điều hướng dọc giữa 5 màn
-  components/charts.tsx     chart + StatTile theo skill dataviz
-  features/service-detail/tabs/  7 tab
-  features/statistics/      (v2) gridview toàn bộ service
-  features/jobs/            (v2) màn Jobs (196 job, cron lint, env-secret)
-  features/billing/         (v2) màn chi phí (luôn "ước lượng", 7 nguồn sai số hiện trên UI)
-  features/recommendations/ (v2) màn gợi ý (mark-only)
-  features/vault/           (v2) UnlockScreen (mở khoá khi mở app) + CredentialPanel (import SA)
+  lib/types.ts              ★ mirror of crates/gcp/src/types.rs
+  lib/ipc.ts                invoke wrapper (api + apiV2). Commands snake_case, params camelCase.
+  components/NavRail.tsx    (v2) vertical navigation across the 5 screens
+  components/charts.tsx     charts + StatTile, per the dataviz skill
+  features/service-detail/tabs/  7 tabs
+  features/statistics/      (v2) grid view over every service
+  features/jobs/            (v2) Jobs screen (cron lint, env-secret scan)
+  features/billing/         (v2) cost screen (always "estimated", 7 error sources shown in the UI)
+  features/recommendations/ (v2) insights screen (mark-only)
+  features/vault/           (v2) UnlockScreen (unlock at launch) + CredentialPanel (import SA)
 ```
 
-## Bất biến không được phá
+## Invariants you must not break
 
-Đây là phần quan trọng nhất của file này. Mỗi mục đều tương ứng một cách làm sập service thật
-trên Cloud Run và đều có test bảo vệ.
+This is the most important section of this file. Each item corresponds to a real way of
+breaking a live Cloud Run service, and each has a test guarding it.
 
-### 1. Đường ghi làm việc trên `serde_json::Value`, không phải struct Rust
+### 1. The write path works on `serde_json::Value`, not Rust structs
 
-Cloud Run v2 là API **declarative**: `PATCH` nghĩa là "đây là trạng thái tôi muốn". Nếu
-deserialize Service vào struct rồi serialize lại, mọi field chưa khai báo (`vpcAccess`,
-`binaryAuthorization`, `livenessProbe`, field Google mới thêm) sẽ **biến mất khỏi payload và
-bị xoá khỏi service thật**.
+Cloud Run v2 is a **declarative** API: `PATCH` means "this is the state I want". If you
+deserialize a Service into a struct and serialize it back, every field you did not declare
+(`vpcAccess`, `binaryAuthorization`, `livenessProbe`, whatever Google added last month) will
+**vanish from the payload and be deleted from the real service**.
 
-Nên: clone JSON đã GET, chạm đúng path cần sửa, giữ nguyên phần còn lại. **Đừng "dọn dẹp"
-`mutate.rs` thành struct chặt** — nó không phải nợ kỹ thuật, nó là biện pháp phòng vệ.
+So: clone the JSON you GET, touch exactly the path you need to change, leave the rest alone.
+**Do not "clean up" `mutate.rs` into tight structs** — that is not technical debt, it is the
+defence.
 
-### 2. `env[]` trộn hai dạng — không bao giờ coi env là `Map<String,String>`
+### 2. `env[]` mixes two shapes — never model env as `Map<String,String>`
 
 ```jsonc
 { "name": "LOG_LEVEL", "value": "debug" }
 { "name": "DB_PASSWORD", "valueSource": { "secretKeyRef": { "secret": "...", "version": "latest" } } }
 ```
 
-Editor kiểu `Record<string,string>` sẽ biến `DB_PASSWORD` thành chuỗi rỗng và làm service mất
-kết nối database. `apply_env` clone nguyên object gốc của secret-ref và chỉ chạm `version`,
-nên field lạ bên trong `secretKeyRef` vẫn còn. Test:
+An editor typed as `Record<string,string>` turns `DB_PASSWORD` into an empty string and takes
+the service's database connection with it. `apply_env` clones the secret-ref's original object
+verbatim and touches only `version`, so unknown fields inside `secretKeyRef` survive. Test:
 `apply_env_giu_field_la_ben_trong_secretkeyref`.
 
-### 3. `sanitize_for_patch` phải xoá `template.revision`
+### 3. `sanitize_for_patch` must strip `template.revision`
 
-Nếu service từng deploy với revision name chỉ định sẵn, giữ field đó khi PATCH sẽ bị Cloud Run
-từ chối: *"Revision X already exists"*. Test: `sanitize_xoa_template_revision`.
+If a service was ever deployed with an explicit revision name, keeping that field in the PATCH
+gets rejected by Cloud Run: *"Revision X already exists"*. Test:
+`sanitize_xoa_template_revision`.
 
-### 4. `etag` là bắt buộc, và 409 không được auto-retry
+### 4. `etag` is mandatory, and a 409 must never be auto-retried
 
-`patch_service` gọi `require_etag` trước khi gửi. `commands/mutate.rs::fresh_and_check` GET
-lại bản tươi (bỏ cache) rồi so etag với bản người dùng đang xem — khác nhau thì dừng và báo
-conflict. Retry 409 = ghi đè mất thay đổi của người khác. `client.rs` cũng không retry
-`PATCH` khi lỗi mạng (request có thể đã tới server và tạo revision rồi mới đứt).
+`patch_service` calls `require_etag` before sending. `commands/mutate.rs::fresh_and_check`
+re-GETs a fresh copy (bypassing the cache) and compares its etag with the one the user is
+looking at — if they differ it stops and reports a conflict. Retrying a 409 means clobbering
+someone else's change. `client.rs` also does not retry `PATCH` on network errors (the request
+may have reached the server and created a revision before the connection dropped).
 
-### 5. Ghi phải đi qua `AppState::guard_write`
+### 5. Writes must go through `AppState::guard_write`
 
-Kiểm read-only và kiểm "gõ đúng tên service" ở **tầng Rust**, không chỉ khoá nút ở UI. Khoá
-nút một mình thì một lỗi state ở frontend hoặc devtools là đủ để bỏ qua cả lớp bảo vệ.
+The read-only check and the "type the service name" check live in the **Rust layer**, not just
+in a disabled button. A disabled button alone means one frontend state bug — or devtools — is
+enough to bypass the entire protection.
 
-Read-only **mặc định BẬT**. File cấu hình đọc lỗi → về `Settings::default()`, tức là bật lại.
-Đừng đổi mặc định này.
+Read-only is **ON by default**. A config file that fails to parse falls back to
+`Settings::default()`, which turns it back on. Do not change this default.
 
-### 6. Traffic ghim phải được cảnh báo
+### 6. Pinned traffic must be surfaced
 
-Nếu `traffic` trỏ cứng vào revision cụ thể thay vì LATEST, revision mới sinh ra **không nhận
-traffic** — người dùng thấy "thành công" mà thực tế không có gì thay đổi. `is_traffic_pinned`
-phát hiện; UI cảnh báo ở tab Env, tab Tổng quan, và badge ở sidebar. Đừng bỏ mấy chỗ đó.
+If `traffic` points at a specific revision instead of LATEST, the new revision **receives no
+traffic** — the user sees "success" while nothing actually changed. `is_traffic_pinned` detects
+it; the UI warns on the Env tab, the Overview tab, and with a sidebar badge. Do not drop any of
+those.
 
-### 7. Giá trị secret không cache, không log
+### 7. Secret values are never cached, never logged
 
-`secretmanager::access_version` dùng `client.get` (không cache) — có cache ở đây là lỗi bảo
-mật, không phải tối ưu. Giá trị bọc trong `Secret` (Debug redact + Drop zeroize). Audit log
-ghi *ai xem secret nào*, tuyệt đối không ghi nội dung. Diff env không in giá trị của
-secret-ref (`EnvChange::Removed.value = None`).
+`secretmanager::access_version` uses `client.get` (no cache) — caching here is a security bug,
+not an optimisation. Values are wrapped in `Secret` (redacting Debug + zeroizing Drop). The
+audit log records *who viewed which secret*, never the content. The env diff does not print
+secret-ref values (`EnvChange::Removed.value = None`).
 
-### 8. Frontend không được cấp shell/fs/http
+### 8. The frontend gets no shell/fs/http
 
-`src-tauri/capabilities/default.json` chỉ có `core:default` + `opener:allow-open-url` giới hạn
-`https://*`. Mọi thao tác file và mạng đi qua `#[tauri::command]`. Nhờ vậy một lỗ XSS ở
-webview không leo thang thành chạy lệnh hay đọc ổ đĩa. Cần capability mới thì phải có lý do rõ
-ràng.
+`src-tauri/capabilities/default.json` contains only `core:default` plus `opener:allow-open-url`
+restricted to `https://*`. Every file and network operation goes through a `#[tauri::command]`.
+That is what stops an XSS hole in the webview from escalating into running commands or reading
+the disk. A new capability needs an explicit justification.
 
-### 9. Metric không lấy được ≠ metric bằng 0
+### 9. "Metric unavailable" ≠ "metric is zero"
 
-Monitoring API **không báo lỗi khi tên metric sai** — nó trả series rỗng. Vẽ đường phẳng ở 0
-khi đó sẽ bị đọc thành "service không có tải", sai lệch nguy hiểm hơn là không có chart.
-`ChartData.unavailable` phân biệt hai trường hợp; `TimeChart` render hai trạng thái khác nhau.
-Đừng gộp lại.
+The Monitoring API **does not report an error for a wrong metric name** — it returns an empty
+series. Drawing a flat line at 0 then reads as "this service has no traffic", which is more
+dangerous than showing no chart. `ChartData.unavailable` separates the two cases; `TimeChart`
+renders two distinct states. Do not collapse them.
 
-Tương tự ở sidebar: badge hiện `–` khi chưa có dữ liệu metric, không hiện `0`.
+Same in the sidebar: the badge shows `–` when there is no metric data yet, not `0`.
 
-### 10. Một truy vấn cho cả project, không phải một truy vấn mỗi service
+### 10. One query for the whole project, not one query per service
 
-`example-project` có ~95 service. `fetch_project_load` gộp theo
-`resource.label.service_name` nên 3 truy vấn là đủ cho toàn bộ sidebar. Đừng đổi thành vòng
-lặp gọi từng service — sẽ đụng quota Monitoring API ngay.
+A project can easily hold ~100 services. `fetch_project_load` groups by
+`resource.label.service_name`, so 3 queries cover the entire sidebar. Do not turn this into a
+loop over services — it will hit the Monitoring API quota immediately.
 
-### 11. App bị khoá vào một project (allowlist ở tầng Rust) — v2
+### 11. The app is locked to one project (Rust-level allowlist) — v2
 
-`config::project_allowed()` + `AppState::guard_project()` chặn mọi thao tác trên project ngoài
-`allowed_projects`. Mặc định khoá vào đúng **một** project (`DEFAULT_ALLOWED_PROJECT`, hiện là
-placeholder `example-project`) để app **không bao giờ** đụng nhầm prod/staging. `guard_project`
-gọi ở đầu `guard_write` — **trước** cả check read-only (test bắt đúng thứ tự này). Đây là guard
-tầng Rust, không phải chỉ ẩn dropdown. Đừng nới mặc định thành "cho qua hết".
+`config::project_allowed()` + `AppState::guard_project()` block every operation on a project
+outside `allowed_projects`. The default locks to exactly **one** project
+(`DEFAULT_ALLOWED_PROJECT`, currently the placeholder `example-project`) so the app can
+**never** wander into the wrong prod/staging environment. `guard_project` is called at the top
+of `guard_write` — **before** the read-only check (a test pins this ordering). This is a
+Rust-level guard, not a hidden dropdown. Do not loosen the default into "allow everything".
 
-> Cạm bẫy hay gặp: nhãn môi trường (label `env=`, prefix của scheduler, `SPRING_PROFILES_ACTIVE`)
-> thường **không** trùng project ID. Allowlist so khớp project ID, không so nhãn.
+> Common trap: the environment label (an `env=` label, a scheduler name prefix,
+> `SPRING_PROFILES_ACTIVE`) usually does **not** equal the project ID. The allowlist matches
+> project IDs, not labels.
 
-### 12. Private key của SA không bao giờ ra dạng plaintext — v2
+### 12. An SA private key never exists in plaintext — v2
 
-Key nằm trong vault mã hoá (`vault.rs`: Argon2id 64MiB/3/1 + AES-256-GCM, header làm AAD để
-chặn downgrade tham số). Bọc trong `Secret` (Debug redact + Drop zeroize). Tuyệt đối không để
-key vào `settings.json`, audit log, cache, hay trả ra IPC. `CredentialInfo` chỉ mang email +
-key id để hiển thị. Frontend đọc file SA bằng `FileReader` (web API) rồi gửi JSON qua IPC một
-lần — không cấp quyền fs cho Tauri để làm việc này.
+The key lives in an encrypted vault (`vault.rs`: Argon2id 64MiB/3/1 + AES-256-GCM, with the
+header as AAD to block parameter-downgrade attacks). It is wrapped in `Secret` (redacting Debug
++ zeroizing Drop). Never let the key reach `settings.json`, the audit log, a cache, or an IPC
+response. `CredentialInfo` carries only the email + key id for display. The frontend reads the
+SA file with `FileReader` (a web API) and sends the JSON over IPC once — Tauri is never granted
+fs permission for this.
 
-### 13. Passphrase không lưu ở đâu, kể cả hash — v2
+### 13. The passphrase is stored nowhere, not even hashed — v2
 
-Chỉ nằm trong RAM lúc unlock/import. Quên passphrase = phải nhập lại từng SA. `UnlockedVault`
-giữ key đã derive trong bộ nhớ phiên; khoá lại (`lock_vault`) là xoá khỏi RAM.
+It exists in RAM only during unlock/import. Forgetting it means re-importing every SA.
+`UnlockedVault` holds the derived key in session memory; locking (`lock_vault`) wipes it from
+RAM.
 
-### 14. `jobs:run` KHÔNG idempotent — v2
+### 14. `jobs:run` is NOT idempotent — v2
 
-Gọi hai lần tạo hai execution, job batch có thể xử lý trùng dữ liệu. Nên: (a) `run_job` chặn
-nếu job đang có execution `Running`, trừ khi `force=true`; (b) không auto-retry —
-`client.rs::PostWrite`/`post_no_retry` (request có thể đã tới server rồi mới đứt mạng); (c) vẫn
-qua `guard_write` (đòi gõ tên job trên project prod/unknown). Xem invariant #4 — cùng lý do với
-409 của PATCH.
+Calling it twice creates two executions, and a batch job may then process the same data twice.
+So: (a) `run_job` blocks if the job already has a `Running` execution, unless `force=true`;
+(b) no auto-retry — `client.rs::PostWrite`/`post_no_retry` (the request may have reached the
+server before the connection dropped); (c) it still goes through `guard_write` (requiring the
+job name to be typed on prod/unknown projects). See invariant #4 — same reasoning as the 409 on
+PATCH.
 
-### 15. Cột cron luôn kèm timezone; cron trống ≠ không có lịch — v2
+### 15. The cron column always carries a timezone; an empty cron ≠ no schedule — v2
 
-Cron không có timezone là thông tin sai (`SchedulerJob.timeZone` luôn hiện). Và cột cron trống
-có thể vì **thiếu dữ liệu Scheduler** (`schedulerUnavailable`) chứ không phải job không có lịch
-— hai trạng thái này phải phân biệt trên UI, giống invariant #9 với metric.
+A cron without a timezone is misinformation (`SchedulerJob.timeZone` is always displayed). And
+an empty cron column may mean **Scheduler data is missing** (`schedulerUnavailable`) rather than
+the job having no schedule — the UI must distinguish these two states, exactly as invariant #9
+does for metrics.
 
-### 16. Số chi phí LUÔN là ước lượng — v2
+### 16. Cost figures are ALWAYS estimates — v2
 
-`CostEstimate.estimated` luôn `true` (có trong payload để UI không quên). Cloud Run tính theo
-vCPU-giây/GiB-giây thực; app chỉ có metric tải × đơn giá công khai. **Bảy nguồn sai số bắt buộc
-hiện thẳng trên màn Billing** (`CostReport.errorSources`), không cất trong doc. Test bắt mỗi
-nguồn > 40 ký tự (đủ để hữu ích). Kiểu tính tiền: request-based (`cpuIdle=true`) rẻ hơn
-instance-based (~10 lần đơn giá CPU) — cột "Kiểu tính tiền" nói rõ vì đây là đòn bẩy tối ưu lớn
-nhất.
+`CostEstimate.estimated` is always `true` (it is in the payload so the UI cannot forget). Cloud
+Run bills on actual vCPU-seconds/GiB-seconds; this app only has load metrics × public list
+prices. **The seven sources of error must be shown directly on the Billing screen**
+(`CostReport.errorSources`), not buried in docs. A test asserts each source is > 40 characters
+(long enough to be useful). Billing mode matters: request-based (`cpuIdle=true`) is far cheaper
+than instance-based (~10× the CPU rate) — the "Billing mode" column spells this out because it
+is the single largest optimisation lever.
 
-### 17. Recommendation chỉ đánh dấu trạng thái, KHÔNG auto-apply — v2
+### 17. Recommendations only mark state, they are NOT auto-applied — v2
 
-`recommender::mark` chỉ đổi state (dismissed/claimed/…) trên Recommender API. Áp dụng thật (đổi
-scaling, sửa IAM) ảnh hưởng traffic/bảo mật nên để người dùng làm có chủ đích trên Console. UI
-nói rõ điều này. Đừng thêm nút "áp dụng" mà không thiết kế lớp xác nhận riêng.
+`recommender::mark` only changes state (dismissed/claimed/…) on the Recommender API. Actually
+applying a recommendation (changing scaling, editing IAM) affects traffic and security, so the
+user should do it deliberately in the Console. The UI says so. Do not add an "apply" button
+without designing its own confirmation layer.
 
-### 18. Cloud Run Jobs dùng template lồng hai lớp — v2
+### 18. Cloud Run Jobs use a doubly nested template — v2
 
-`job.template.template.containers` (ExecutionTemplate bọc TaskTemplate) — KHÁC service chỉ có
-một lớp `template.containers`. `jobs::task_container` đọc đúng đường lồng này; đọc sai một lớp
-sẽ ra rỗng và tưởng job không có container.
+`job.template.template.containers` (an ExecutionTemplate wrapping a TaskTemplate) — **unlike**
+services, which have a single `template.containers`. `jobs::task_container` walks the correct
+nesting; getting it wrong by one level yields empty and makes you believe the job has no
+container.
 
-## Quy ước
+## Conventions
 
-**Serde:** mọi DTO có `#[serde(rename_all = "camelCase")]`. `Option<T>` ra `null`, không bỏ
-field — nên TS dùng `T | null`, không dùng `?:`.
+**Serde:** every DTO has `#[serde(rename_all = "camelCase")]`. `Option<T>` serializes to
+`null` rather than omitting the field — so TS uses `T | null`, not `?:`.
 
-**IPC:** tên command giữ snake_case (đúng tên hàm Rust), tham số truyền **camelCase**. Truyền
-snake_case sẽ lỗi "missing field".
+**IPC:** command names stay snake_case (matching the Rust function name), parameters are passed
+**camelCase**. Passing snake_case yields a "missing field" error.
 
-**Type TS:** `src/lib/types.ts` là bản mirror viết tay của `crates/gcp/src/types.rs`. Không
-dùng generator (specta 2.0 còn rc). Sửa một bên **phải** sửa bên kia — TypeScript không bắt
-được lệch này vì dữ liệu qua IPC là `any` ở ranh giới.
+**TS types:** `src/lib/types.ts` is a hand-written mirror of `crates/gcp/src/types.rs`. No
+generator (specta 2.0 is still rc). Changing one side **requires** changing the other —
+TypeScript cannot catch the drift because IPC data is `any` at the boundary.
 
-**Lỗi ra frontend:** `CmdError { message, detail, kind, status }`. `kind` là chuỗi ổn định để
-frontend phân nhánh (`conflict` → bắt reload, `auth` → hướng dẫn `gcloud auth login`), không
-phải để hiển thị.
+**Errors reaching the frontend:** `CmdError { message, detail, kind, status }`. `kind` is a
+stable string for the frontend to branch on (`conflict` → force a reload, `auth` → guide toward
+`gcloud auth login`); it is not for display.
 
-**Chart:** theo skill `dataviz`. Bảng màu ở `src/styles.css` đã chạy qua
-`validate_palette.js` (PASS light + dark, 4 slot đầu, pairlist adjacent). **Thứ tự slot là cơ
-chế an toàn cho người mù màu, không phải thẩm mỹ** — muốn đổi thì đổi cả bộ rồi chạy lại
-validator, đừng sửa từng hex. Không bao giờ dùng hai trục y. Màu gắn với thực thể (tra theo
-tên series), không gắn với index của mảng đang render.
+**Charts:** follow the `dataviz` skill. The palette in `src/styles.css` has been run through
+`validate_palette.js` (PASS in light + dark, first 4 slots, adjacent pairlist). **Slot order is
+a colour-blindness safety mechanism, not decoration** — to change it, change the whole set and
+re-run the validator; do not tweak individual hex values. Never use two y-axes. Colour binds to
+the entity (looked up by series name), never to the index of the array being rendered.
 
-**Tailwind:** v4, cấu hình bằng CSS. `src/styles.css` có `@source "./";` — cần vì
-`vite.preview.config.ts` đổi root sang `preview/` và Tailwind sẽ bỏ sót `src/`, sinh ra CSS
-gần như rỗng mà **không báo lỗi gì**. Đừng xoá dòng đó.
+**Tailwind:** v4, configured in CSS. `src/styles.css` contains `@source "./";` — required
+because `vite.preview.config.ts` moves the root to `preview/`, and Tailwind would otherwise miss
+`src/` and emit near-empty CSS **with no error at all**. Do not delete that line.
 
-## Môi trường Windows
+## Windows environment
 
-- `gcloud` trên Windows là **`gcloud.cmd`**, không phải `gcloud`. `auth.rs::gcloud_candidates`
-  dò theo thứ tự `.cmd` → `.exe` → `.bat` → không đuôi. Đây là lỗi số một khiến app kiểu này
-  chết ngay bước đầu trên Windows.
-- Spawn gcloud phải có `CREATE_NO_WINDOW` (`0x08000000`), không thì nháy cửa sổ console đen
-  mỗi lần refresh token.
-- `main.rs` có `windows_subsystem = "windows"` cho bản release.
+- On Windows `gcloud` is **`gcloud.cmd`**, not `gcloud`. `auth.rs::gcloud_candidates` probes in
+  the order `.cmd` → `.exe` → `.bat` → no extension. This is the number one reason an app like
+  this dies at the first step on Windows.
+- Spawning gcloud requires `CREATE_NO_WINDOW` (`0x08000000`), otherwise a black console window
+  flashes on every token refresh.
+- `main.rs` sets `windows_subsystem = "windows"` for release builds.
 
-## Ngoài phạm vi (cố ý)
+## Out of scope (deliberately)
 
-Deploy image mới, chuyển traffic, rollback revision, sửa giá trị secret, sửa IAM/VPC/Cloud SQL.
-Mấy cái này ảnh hưởng trực tiếp tới traffic đang chạy hoặc bảo mật nên để trên GCP Console, nơi
-có sẵn xác nhận và audit của Google.
+Deploying a new image, shifting traffic, rolling back a revision, editing secret values,
+editing IAM/VPC/Cloud SQL. These affect live traffic or security directly, so they belong in
+the GCP Console where Google already provides confirmation and audit.
 
-> Cloud Run Jobs đã **vào phạm vi từ v2** nhưng chỉ ở mức: xem tổng quan, chạy tay (có lớp
-> chặn idempotent — invariant #14), và pause/resume Scheduler. Không sửa định nghĩa job ở đây.
-> Recommendation cũng chỉ đánh dấu, không áp dụng (invariant #17).
+> Cloud Run Jobs came **into scope in v2**, but only for: viewing the overview, running
+> manually (with the idempotency guard — invariant #14), and pausing/resuming Scheduler. Job
+> definitions are not editable here. Recommendations are marked only, never applied
+> (invariant #17).
 
-Nếu được yêu cầu thêm mấy tính năng còn ngoài phạm vi: hỏi lại trước, vì chúng cần thiết kế lớp
-xác nhận riêng chứ không phải chỉ thêm một command.
+If asked to add one of the out-of-scope features: ask first, because each needs its own
+confirmation layer rather than just one more command.
 
-## Project GCP dùng trong ví dụ
+## GCP projects used in examples
 
-Repo này công khai nên **không** ghi project ID thật ở bất kỳ đâu. Mọi ví dụ, test và mock
-dùng bộ tên placeholder dưới đây — sửa `DEFAULT_ALLOWED_PROJECT` (`src-tauri/src/config.rs`)
-hoặc allowlist trong Cài đặt thành project của bạn trước khi chạy thật.
+This repo is public, so **no real project ID appears anywhere**. Every example, test and mock
+uses the placeholder set below — change `DEFAULT_ALLOWED_PROJECT`
+(`src-tauri/src/config.rs`) or the allowlist in Settings to your own project before real use.
 
-| Project ID (placeholder) | Vai trong ví dụ |
+| Project ID (placeholder) | Role in examples |
 |---|---|
-| `example-project` | project mặc định trong allowlist. Tên không có từ khoá dev/prod nên `suggest_label` trả `unknown` → app xử lý như prod. |
+| `example-project` | the default entry in the allowlist. The name contains no dev/prod keyword, so `suggest_label` returns `unknown` → the app treats it as prod. |
 | `example-prod` | production |
 | `example-staging` | staging |
 | `example-develop`, `example-develop-vn`, `example-sandbox`, `example-demo` | dev |
 
-Nhánh đoán "dev" trong `suggest_label` cố tình hẹp: đoán sai thành dev là mất một lớp bảo vệ
-trên môi trường có thể là production. Đoán sai thành prod chỉ làm app hỏi kỹ hơn.
+The "dev" branch in `suggest_label` is deliberately narrow: guessing dev wrongly removes a
+safety layer from what might be production. Guessing prod wrongly only makes the app ask one
+more question.
 
-**Khi thêm test/ví dụ mới: đừng dán project ID, email, service account, hay tên service của
-hạ tầng thật vào repo.** Dùng bộ placeholder trên.
+**When adding tests or examples: never paste a real project ID, email, service account, or
+service name into the repo.** Use the placeholder set above. Note that GitHub push protection
+also rejects strings that merely *look* like live credentials — see the comment in
+`cronlint.rs` about why the Stripe test fixtures contain dashes.
