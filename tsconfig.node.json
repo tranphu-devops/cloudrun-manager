@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    // Project reference không được tắt emit; ghi declaration ra thư mục tạm là đủ,
+    // vite mới là thứ build thật.
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "outDir": "./node_modules/.tmp/tsnode"
+  },
+  "include": ["vite.config.ts"]
+}

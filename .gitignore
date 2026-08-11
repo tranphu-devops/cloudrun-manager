@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# Credential — mục quan trọng nhất của repo này
+# ---------------------------------------------------------------------------
+# Đây là công cụ vận hành GCP nên rủi ro số một là commit nhầm key. App KHÔNG cần
+# file key nào để chạy (nó lấy access token qua gcloud CLI), nên nếu thấy file khớp
+# pattern dưới đây xuất hiện trong repo thì gần như chắc chắn là để lẫn vào.
+*-key.json
+*_key.json
+service-account*.json
+sa-*.json
+application_default_credentials.json
+client_secret*.json
+credentials.json
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Rust / Tauri
+# ---------------------------------------------------------------------------
+target/
+**/*.rs.bk
+*.pdb
+
+# Tauri sinh ra lúc build (schema, permission của plugin) — không commit.
+/src-tauri/gen/
+
+# ---------------------------------------------------------------------------
+# Node / Vite
+# ---------------------------------------------------------------------------
+node_modules/
+/dist/
+/dist-preview/
+.vite/
+*.tsbuildinfo
+
+# tsconfig.node.json phải ghi declaration ra đâu đó vì project reference không cho noEmit.
+/node_modules/.tmp/
+
+# ---------------------------------------------------------------------------
+# Rác của quy trình chuyển file
+# ---------------------------------------------------------------------------
+_src.tar.gz
+_to_delete/
+
+# ---------------------------------------------------------------------------
+# Editor / OS
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Log & output cục bộ
+# ---------------------------------------------------------------------------
+*.log
+npm-debug.log*
+audit.jsonl
+/shots/

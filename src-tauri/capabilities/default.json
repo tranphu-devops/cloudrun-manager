@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Quyền tối thiểu. Frontend KHÔNG được cấp shell/fs/http — mọi thao tác file và mạng đi qua #[tauri::command] trong Rust. Nhờ vậy một lỗ XSS ở webview không leo thang thành chạy lệnh hay đọc ổ đĩa.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://*" }]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[workspace]
+
+[package]
+name = "gcp"
+version = "0.2.0"
+edition = "2021"
+description = "GCP API client layer for Cloud Run Cockpit (no Tauri dependency, unit-testable)"
+license = "MIT"
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["sync", "time", "process", "rt", "macros"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+base64 = "0.22"
+zeroize = "1"
+tracing = "0.1"
+urlencoding = "2"
+# --- v2: sign JWT RS256 cho service account ---
+# Chọn `rsa` (thuần Rust) thay vì `ring`/`aws-lc-rs`: hai crate kia cần C compiler,
+# còn máy build chính là Windows. Tránh hẳn một lớp phụ thuộc toolchain.
+rsa = { version = "0.9", features = ["sha2"] }
+sha2 = "0.10"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+# Chỉ dùng ở test: sinh key RSA thật để verify chiều sign.
+rand = "0.8"

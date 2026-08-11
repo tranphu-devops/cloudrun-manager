@@ -1,0 +1,43 @@
+[workspace]
+
+[package]
+name = "cloud-run-cockpit"
+version = "0.2.0"
+description = "Quản lý Cloud Run trên GCP: xem service, sửa env, xem secret/log/tải/instance"
+authors = ["Cloud Run Cockpit contributors"]
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "cloud_run_cockpit_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+gcp = { path = "../crates/gcp" }
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["sync", "time", "rt-multi-thread", "fs"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+# --- v2: vault mã hoá cho service account key ---
+# Tất cả thuần Rust, không cần C toolchain trên Windows.
+argon2 = "0.5"          # KDF từ passphrase
+aes-gcm = "0.10"        # AEAD: mã hoá + phát hiện file bị sửa
+rand = "0.8"            # salt + nonce từ OsRng
+zeroize = "1"
+thiserror = "2"
+
+[features]
+# Bật devtools cả ở release chỉ khi thực sự cần debug máy người khác.
+devtools = ["tauri/devtools"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+/*
+ * Chỉ rõ nơi quét class. Tailwind v4 tự dò theo Vite root, nên khi build preview
+ * (`vite.preview.config.ts` đặt root = `preview/`) nó sẽ bỏ sót `src/` và sinh ra file
+ * CSS gần như rỗng — giao diện mất hết layout mà không có lỗi nào. Khai báo tường minh
+ * ở đây đúng cho cả hai config.
+ */
+@source "./";
+
+/*
+ * Token màu.
+ *
+ * Phần `--series-*`, `--surface-*`, `--ink-*`, `--status-*` lấy nguyên từ palette đã
+ * được validate của skill dataviz (validate_palette.js: PASS toàn bộ ở cả light và dark
+ * cho 4 slot đầu trên pairlist adjacent). Đừng sửa từng hex lẻ — nếu cần đổi thì đổi
+ * cả bộ rồi chạy lại validator, vì thứ tự slot chính là cơ chế bảo đảm an toàn cho
+ * người mù màu, không phải chuyện thẩm mỹ.
+ *
+ * Light mode có WARN contrast ở slot aqua/yellow (dưới 3:1 trên nền sáng) → bắt buộc
+ * có nhãn hiện rõ hoặc bảng số. App đáp ứng bằng legend luôn hiển thị + nút "Xem bảng".
+ */
+:root {
+  color-scheme: light;
+
+  --surface-1: #fcfcfb;
+  --surface-page: #f9f9f7;
+  --surface-2: #f2f1ed;
+
+  --ink-primary: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --hairline: rgb(11 11 11 / 0.1);
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --delta-good: #006300;
+
+  --focus: #2a78d6;
+}
+
+/* Dark là một bộ bước màu được CHỌN cho nền tối, không phải đảo ngược light. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --surface-1: #1a1a19;
+    --surface-page: #0d0d0d;
+    --surface-2: #232322;
+
+    --ink-primary: #ffffff;
+    --ink-secondary: #c3c2b7;
+    --ink-muted: #898781;
+
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --hairline: rgb(255 255 255 / 0.1);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+
+    --delta-good: #0ca30c;
+    --focus: #3987e5;
+  }
+}
+
+/* Toggle thủ công phải thắng cả cài đặt OS, cả hai chiều. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-1: #1a1a19;
+  --surface-page: #0d0d0d;
+  --surface-2: #232322;
+
+  --ink-primary: #ffffff;
+  --ink-secondary: #c3c2b7;
+  --ink-muted: #898781;
+
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --hairline: rgb(255 255 255 / 0.1);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --delta-good: #0ca30c;
+  --focus: #3987e5;
+}
+
+* {
+  border-color: var(--hairline);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--ink-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  /* App desktop: không cho chọn text linh tinh, nhưng vùng dữ liệu thì cho (bên dưới). */
+  user-select: none;
+}
+
+/* Giá trị người dùng cần copy được: env, log, URL, secret. */
+.selectable,
+input,
+textarea,
+pre,
+code {
+  user-select: text;
+}
+
+/* Số liệu dùng chữ số đều bề rộng để cột không nhảy khi giá trị đổi. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--axis);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Recharts vẽ focus ring xấu quanh surface; tắt. */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
