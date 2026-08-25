@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { StatTile } from "../../components/charts";
-import { Badge, Button, EmptyState, ErrorBox, Input, Loading, Notice, Select } from "../../components/ui";
+import { Badge, Button, EmptyState, ErrorBox, Input, Loading, Notice, Select, TableScroll } from "../../components/ui";
 import { ago, compact, num, percent, regionLabel, shortImage } from "../../lib/format";
 import { useT, useTNode } from "../../lib/i18n";
 import { useProjectLoad, useServices } from "../../lib/queries";
@@ -112,8 +112,14 @@ export function StatisticsPage({
   if (servicesQ.isLoading) return <Loading label={t("Đang lấy toàn bộ service…")} />;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-      <ErrorBox error={servicesQ.error} onRetry={() => void servicesQ.refetch()} />
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+      {/*
+        Trang không cuộn; phần đầu (tile + filter) tự cuộn khi cửa sổ hẹp, còn bảng nhận
+        toàn bộ chiều cao còn lại để chạy tới đáy. `min-h` giữ cho bảng không bị bóp về 0
+        khi phần đầu quá cao.
+      */}
+      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto">
+        <ErrorBox error={servicesQ.error} onRetry={() => void servicesQ.refetch()} />
 
       {snap && snap.missing.length > 0 && (
         <Notice tone="warning" icon="⚠">
@@ -175,7 +181,7 @@ export function StatisticsPage({
           placeholder={t("tìm theo tên, image, region…")}
           className="w-72"
         />
-        <label className="flex items-center gap-1.5 text-[12px]">
+        <label className="flex items-center gap-1.5 text-[13px]">
           <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} />
           {t("Chỉ hiện service có vấn đề")}
         </label>
@@ -186,7 +192,7 @@ export function StatisticsPage({
           <option value="errorRate">{t("Sắp xếp: tỉ lệ lỗi")}</option>
           <option value="name">{t("Sắp xếp: tên")}</option>
         </Select>
-        <span className="text-[11px] text-[var(--ink-muted)]">
+        <span className="text-[12px] text-[var(--ink-muted)]">
           {t("{shown}/{total} service", { shown: rows.length, total: stats.total })}
           {servicesQ.data
             ? t(" · dữ liệu {ago}", {
@@ -208,14 +214,15 @@ export function StatisticsPage({
         >
           ⟳ Reload
         </Button>
+        </div>
       </div>
 
       {rows.length === 0 ? (
         <EmptyState icon="◧" title={t("Không có service nào khớp")} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border" style={{ background: "var(--surface-1)" }}>
-          <table className="w-full text-[11px]">
-            <thead style={{ background: "var(--surface-2)" }}>
+        <TableScroll fill minHeight="160px">
+          <table className="w-full text-[12px]">
+            <thead className="sticky-head">
               <tr className="text-left">
                 <th className="px-2 py-1.5 font-medium">{t("Service")}</th>
                 <th className="px-2 py-1.5 font-medium">{t("Trạng thái")}</th>
@@ -234,7 +241,7 @@ export function StatisticsPage({
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </div>
   );
@@ -266,7 +273,7 @@ function StatRow({
     >
       <td className="px-2 py-1.5">
         <div className="mono font-medium">{s.name}</div>
-        <div className="text-[10px] text-[var(--ink-muted)]">{regionLabel(s.region)}</div>
+        <div className="text-[11px] text-[var(--ink-muted)]">{regionLabel(s.region)}</div>
       </td>
       <td className="px-2 py-1.5 whitespace-nowrap">
         <Badge tone={h.tone} icon={h.icon}>
@@ -309,7 +316,7 @@ function StatRow({
       </td>
       <td className="px-2 py-1.5 whitespace-nowrap text-[var(--ink-muted)]">
         {ago(s.updateTime)}
-        {s.lastModifier && <div className="text-[10px]">{s.lastModifier.split("@")[0]}</div>}
+        {s.lastModifier && <div className="text-[11px]">{s.lastModifier.split("@")[0]}</div>}
       </td>
     </tr>
   );

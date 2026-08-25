@@ -131,7 +131,7 @@ export function CredentialPanel({
 
       {/* Trạng thái hiện tại */}
       <div className="rounded-md border p-3" style={{ background: "var(--surface-2)" }}>
-        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
           <span className="text-[var(--ink-muted)]">{t("Đang xác thực bằng:")}</span>
           <Badge tone={status?.effectiveSource === "serviceAccount" ? "info" : "neutral"}>
             {status ? t(SOURCE_TEXT[status.effectiveSource]) : "–"}
@@ -143,7 +143,7 @@ export function CredentialPanel({
           )}
         </div>
         {status?.active && (
-          <div className="mono selectable mt-1.5 text-[11px] break-all">{status.active.clientEmail}</div>
+          <div className="mono selectable mt-1.5 text-[12px] break-all">{status.active.clientEmail}</div>
         )}
         {status?.exists && status.unlocked && (
           <div className="mt-2">
@@ -157,14 +157,14 @@ export function CredentialPanel({
       {/* Danh sách credential đã lưu — chỉ khi đã mở khoá */}
       {status?.unlocked && status.credentialCount > 0 && (
         <div>
-          <h4 className="mb-1.5 text-[12px] font-semibold">
+          <h4 className="mb-1.5 text-[13px] font-semibold">
             {t("Credential đã lưu ({count})", { count: status.credentialCount })}
           </h4>
           <div className="flex flex-col gap-1.5">
             {Array.from({ length: status.credentialCount }).map((_, i) => {
               const isActive = status.active && i === activeIndexGuess(status, i);
               return (
-                <div key={i} className="flex items-center gap-2 rounded border px-2 py-1.5 text-[11px]">
+                <div key={i} className="flex items-center gap-2 rounded border px-2 py-1.5 text-[12px]">
                   <span className="mono flex-1 truncate">
                     {isActive ? status.active?.clientEmail : `Credential #${i + 1}`}
                   </span>
@@ -213,10 +213,10 @@ export function CredentialPanel({
 
       {/* Import SA mới */}
       <div className="rounded-md border p-3">
-        <h4 className="mb-2 text-[12px] font-semibold">
+        <h4 className="mb-2 text-[13px] font-semibold">
           {status?.exists ? t("Thêm service account") : t("Nhập service account (tạo vault)")}
         </h4>
-        <p className="mb-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+        <p className="mb-2 text-[12px] leading-relaxed text-[var(--ink-muted)]">
           {t(
             "Chọn file JSON key của service account. File được đọc ngay trong app, key riêng được mã hoá bằng passphrase rồi lưu trên máy — không gửi đi đâu, không nằm trong settings hay log.",
           )}
@@ -235,14 +235,14 @@ export function CredentialPanel({
             ref={fileRef}
             type="file"
             accept=".json,application/json"
-            className="text-[12px] file:mr-2 file:rounded file:border file:bg-[var(--surface-2)] file:px-2 file:py-1 file:text-[12px]"
+            className="text-[13px] file:mr-2 file:rounded file:border file:bg-[var(--surface-2)] file:px-2 file:py-1 file:text-[13px]"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) onPickFile(f);
             }}
           />
           {fileName && (
-            <span className="text-[11px] text-[var(--ink-muted)]">
+            <span className="text-[12px] text-[var(--ink-muted)]">
               {t("Đã nạp")} <span className="mono">{fileName}</span> (
               {(keyJson.length / 1024).toFixed(1)} KB)
             </span>

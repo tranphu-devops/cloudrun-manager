@@ -13,7 +13,7 @@ import { Badge, Button, Dialog, ErrorBox, Input, Notice } from "./ui";
  */
 function DiffRow({ c }: { c: EnvChange }) {
   const t = useT();
-  const base = "mono flex items-start gap-2 rounded px-1.5 py-1 text-[11px] leading-relaxed";
+  const base = "mono flex items-start gap-2 rounded px-1.5 py-1 text-[12px] leading-relaxed";
 
   if (c.kind === "added") {
     return (
@@ -175,7 +175,7 @@ export function ApplyDialog({
 
             {preview.envChanges.length > 0 && (
               <section>
-                <h3 className="mb-1.5 text-[12px] font-semibold">
+                <h3 className="mb-1.5 text-[13px] font-semibold">
                   {t("Thay đổi biến môi trường ({n})", { n: preview.envChanges.length })}
                 </h3>
                 <div className="flex flex-col gap-1">
@@ -188,10 +188,10 @@ export function ApplyDialog({
 
             {preview.scalingChanges.length > 0 && (
               <section>
-                <h3 className="mb-1.5 text-[12px] font-semibold">
+                <h3 className="mb-1.5 text-[13px] font-semibold">
                   {t("Thay đổi scaling / resource ({n})", { n: preview.scalingChanges.length })}
                 </h3>
-                <ul className="mono flex flex-col gap-1 text-[11px]">
+                <ul className="mono flex flex-col gap-1 text-[12px]">
                   {preview.scalingChanges.map((c, i) => (
                     <li
                       key={i}
@@ -228,13 +228,13 @@ export function ApplyDialog({
             className="rounded-md border p-3"
             style={{ borderColor: "var(--status-critical)" }}
           >
-            <p className="mb-2 text-[12px] leading-relaxed">
+            <p className="mb-2 text-[13px] leading-relaxed">
               {t(
                 "Project này được gắn nhãn production hoặc chưa gắn nhãn. Gõ đúng tên service để xác nhận:",
               )}
             </p>
             <div className="flex items-center gap-2">
-              <code className="mono select-none rounded border px-1.5 py-0.5 text-[12px]">
+              <code className="mono select-none rounded border px-1.5 py-0.5 text-[13px]">
                 {serviceName}
               </code>
               <Input

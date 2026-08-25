@@ -23,6 +23,21 @@ import {
   useToast,
 } from "./ui";
 
+export type ThemeId = "light" | "dark" | "monokai";
+
+/**
+ * Nhãn của từng giao diện.
+ *
+ * Đây là một bảng tra, giá trị của nó mới là thứ đi qua hàm dịch — script dò key chỉ tìm
+ * lời gọi có chuỗi literal sẽ KHÔNG thấy mấy câu này. Thêm giá trị mới ở đây thì phải thêm
+ * key tương ứng vào `locales/{en,ja}.ts` bằng tay (xem invariant #19 trong CLAUDE.md).
+ */
+const THEME_TEXT: Record<ThemeId, { icon: string; label: string }> = {
+  light: { icon: "☀", label: "Sáng" },
+  dark: { icon: "🌙", label: "Tối" },
+  monokai: { icon: "◈", label: "Monokai dim" },
+};
+
 const LABEL_TEXT: Record<EnvLabel, string> = {
   dev: "DEV",
   staging: "STAGING",
@@ -69,7 +84,7 @@ export function TopBar({
   onRefresh,
   onOpenPalette,
   theme,
-  onThemeToggle,
+  onThemeChange,
 }: {
   settings: Settings;
   project: string | null;
@@ -78,8 +93,8 @@ export function TopBar({
   refreshing: boolean;
   onRefresh: () => void;
   onOpenPalette: () => void;
-  theme: "light" | "dark" | "system";
-  onThemeToggle: () => void;
+  theme: ThemeId;
+  onThemeChange: (v: ThemeId) => void;
 }) {
   const t = useT();
   const qc = useQueryClient();
@@ -106,7 +121,7 @@ export function TopBar({
           borderTop: isProd ? "3px solid var(--status-critical)" : "3px solid transparent",
         }}
       >
-        <span className="text-[13px] font-semibold">Cloud Run Cockpit</span>
+        <span className="text-[14px] font-semibold">Cloud Run Cockpit</span>
 
         <Select
           value={project ?? ""}
@@ -141,7 +156,7 @@ export function TopBar({
           <Select
             aria-label={t("Gắn nhãn môi trường")}
             value=""
-            className="h-7 text-[11px]"
+            className="h-7 text-[12px]"
             onChange={async (e) => {
               const v = e.target.value as EnvLabel;
               if (!v) return;
@@ -169,7 +184,7 @@ export function TopBar({
         <div className="ml-auto flex items-center gap-2">
           {dataAgeSeconds !== null && (
             <span
-              className="tnum text-[11px] text-[var(--ink-muted)]"
+              className="tnum text-[12px] text-[var(--ink-muted)]"
               title={t("Độ tươi của dữ liệu đang hiển thị")}
             >
               {t("dữ liệu {ago}", { ago: agoSeconds(dataAgeSeconds) })}
@@ -216,9 +231,18 @@ export function TopBar({
             🔍 <Kbd>Ctrl K</Kbd>
           </Button>
 
-          <Button size="sm" variant="ghost" onClick={onThemeToggle} title={`Theme: ${theme}`}>
-            {theme === "dark" ? "🌙" : theme === "light" ? "☀" : "◐"}
-          </Button>
+          <Select
+            value={theme}
+            onChange={(e) => onThemeChange(e.target.value as ThemeId)}
+            aria-label={t("Giao diện")}
+            title={t("Giao diện")}
+          >
+            {(Object.keys(THEME_TEXT) as ThemeId[]).map((id) => (
+              <option key={id} value={id}>
+                {THEME_TEXT[id].icon} {t(THEME_TEXT[id].label)}
+              </option>
+            ))}
+          </Select>
 
           <Button
             size="sm"
@@ -243,7 +267,7 @@ export function TopBar({
       {/* Thanh phụ: danh tính hiệu lực + cảnh báo quyền. Chỉ hiện khi có gì cần nói. */}
       {(auth.data?.impersonating || auth.isError || (caps.data && caps.data.missing.length > 0)) && (
         <div
-          className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-1 text-[11px]"
+          className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-1 text-[12px]"
           style={{ background: "var(--surface-2)" }}
         >
           {auth.data?.impersonating && (
@@ -355,7 +379,7 @@ function SettingsDialog({
             đợi bấm Lưu — đổi ngôn ngữ mà phải đọc tiếp tiếng Việt để tìm nút Lưu thì
             hỏng mất mục đích. */}
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Ngôn ngữ")}</h3>
+          <h3 className="mb-1.5 text-[13px] font-semibold">{t("Ngôn ngữ")}</h3>
           <div className="flex items-center gap-2">
             <Select
               value={lang}
@@ -371,20 +395,20 @@ function SettingsDialog({
                 </option>
               ))}
             </Select>
-            <span className="text-[11px] text-[var(--ink-muted)]">
+            <span className="text-[12px] text-[var(--ink-muted)]">
               {t("Message lỗi từ GCP vẫn hiện bằng tiếng Việt.")}
             </span>
           </div>
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Xác thực (Service Account)")}</h3>
+          <h3 className="mb-1.5 text-[13px] font-semibold">{t("Xác thực (Service Account)")}</h3>
           <CredentialPanel allowedProjects={settings.allowedProjects} />
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Project được phép thao tác")}</h3>
-          <p className="mb-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+          <h3 className="mb-1.5 text-[13px] font-semibold">{t("Project được phép thao tác")}</h3>
+          <p className="mb-2 text-[12px] leading-relaxed text-[var(--ink-muted)]">
             {t(
               "Khi khoá, app chỉ cho phép thao tác trên đúng những project trong danh sách — chặn ở tầng Rust, không chỉ ẩn dropdown. Đây là lớp bảo vệ để app không đụng nhầm project production hay staging. Nhiều project cách nhau bằng dấu phẩy.",
             )}
@@ -458,21 +482,21 @@ function SettingsDialog({
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Nhãn môi trường")}</h3>
-          <p className="mb-2 text-[11px] text-[var(--ink-muted)]">
+          <h3 className="mb-1.5 text-[13px] font-semibold">{t("Nhãn môi trường")}</h3>
+          <p className="mb-2 text-[12px] text-[var(--ink-muted)]">
             {t(
               "Project nhãn Production hoặc chưa gắn nhãn yêu cầu gõ đúng tên service trước khi ghi. Gắn nhãn Dev cho project thử nghiệm để khỏi phải gõ mỗi lần.",
             )}
           </p>
           <div className="flex flex-col gap-1">
             {Object.entries(settings.projectLabels).length === 0 && (
-              <p className="text-[11px] text-[var(--ink-muted)]">{t("Chưa gắn nhãn project nào.")}</p>
+              <p className="text-[12px] text-[var(--ink-muted)]">{t("Chưa gắn nhãn project nào.")}</p>
             )}
             {Object.entries(settings.projectLabels).map(([p, l]) => (
               <div key={p} className="flex items-center gap-2">
-                <span className="mono flex-1 truncate text-[12px]">{p}</span>
+                <span className="mono flex-1 truncate text-[13px]">{p}</span>
                 <Select
-                  className="h-7 text-[11px]"
+                  className="h-7 text-[12px]"
                   value={l}
                   onChange={async (e) => onSaved(await api.setProjectLabel(p, e.target.value as EnvLabel))}
                 >
@@ -487,8 +511,8 @@ function SettingsDialog({
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">{t("Kiểm tra tên metric")}</h3>
-          <p className="mb-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+          <h3 className="mb-1.5 text-[13px] font-semibold">{t("Kiểm tra tên metric")}</h3>
+          <p className="mb-2 text-[12px] leading-relaxed text-[var(--ink-muted)]">
             {t(
               "Monitoring API không báo lỗi khi tên metric sai — nó trả về series rỗng. Chart phẳng ở 0 khi đó sẽ bị đọc thành “service không có tải”. Chạy kiểm tra này khi thêm project mới.",
             )}
@@ -526,8 +550,8 @@ function SettingsDialog({
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-[12px] font-semibold">Audit log</h3>
-          <p className="mb-2 text-[11px] text-[var(--ink-muted)]">
+          <h3 className="mb-1.5 text-[13px] font-semibold">Audit log</h3>
+          <p className="mb-2 text-[12px] text-[var(--ink-muted)]">
             {t(
               "Mọi thao tác ghi và mọi lần xem giá trị secret được ghi vào file JSONL trên máy (không chứa giá trị secret).",
             )}
@@ -536,7 +560,7 @@ function SettingsDialog({
             <Button size="sm" onClick={async () => setAuditFile(await api.auditPath())}>
               {t("Hiện đường dẫn file")}
             </Button>
-            {auditFile && <code className="selectable mono text-[11px]">{auditFile}</code>}
+            {auditFile && <code className="selectable mono text-[12px]">{auditFile}</code>}
           </div>
         </div>
       </div>
@@ -570,7 +594,7 @@ function AuditDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
             const tone =
               outcome === "error" ? "critical" : outcome === "pending" ? "warning" : "good";
             return (
-              <div key={i} className="rounded border px-2.5 py-2 text-[11px]">
+              <div key={i} className="rounded border px-2.5 py-2 text-[12px]">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={tone}>
                     {t(ACTION_TEXT[String(r["action"])] ?? String(r["action"]))}

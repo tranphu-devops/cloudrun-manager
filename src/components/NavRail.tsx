@@ -43,14 +43,14 @@ export function NavRail({
             onClick={() => onChange(it.id)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex flex-col items-center gap-1 rounded-md px-1 py-2 text-[11px] transition-colors",
+              "relative flex flex-col items-center gap-1 rounded-md px-1 py-2 text-[12px] transition-colors",
               active
                 ? "font-semibold text-[var(--ink-primary)]"
                 : "text-[var(--ink-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--ink-primary)]",
             )}
             style={active ? { background: "color-mix(in oklab, var(--series-1) 14%, transparent)" } : undefined}
           >
-            <span className="text-[17px] leading-none" aria-hidden>
+            <span className="text-[18px] leading-none" aria-hidden>
               {it.icon}
             </span>
             {t(it.label)}

@@ -108,7 +108,7 @@ function Legend({ order, unit }: { order: string[]; unit: string }) {
   return (
     <ul className="flex flex-wrap items-center gap-x-3 gap-y-1">
       {order.map((label) => (
-        <li key={label} className="flex items-center gap-1.5 text-[11px] text-[var(--ink-secondary)]">
+        <li key={label} className="flex items-center gap-1.5 text-[12px] text-[var(--ink-secondary)]">
           <span
             aria-hidden
             className="inline-block h-2 w-2 rounded-sm"
@@ -138,8 +138,8 @@ function DataTable({
   const recent = [...rows].reverse().slice(0, 60);
   return (
     <div className="max-h-64 overflow-auto rounded border">
-      <table className="w-full text-[11px]">
-        <thead className="sticky top-0" style={{ background: "var(--surface-2)" }}>
+      <table className="w-full text-[12px]">
+        <thead className="sticky-head">
           <tr>
             <th className="px-2 py-1 text-left font-medium">{t("Thời điểm")}</th>
             {order.map((o) => (
@@ -184,7 +184,7 @@ function TooltipCard({
   if (!active || !payload || payload.length === 0) return null;
   return (
     <div
-      className="rounded-md border px-2.5 py-2 text-[11px] shadow-lg"
+      className="rounded-md border px-2.5 py-2 text-[12px] shadow-lg"
       style={{ background: "var(--surface-1)" }}
     >
       <p className="mb-1 font-medium text-[var(--ink-secondary)]">
@@ -212,7 +212,7 @@ function TooltipCard({
   );
 }
 
-const AXIS_STYLE = { fontSize: 10, fill: "var(--ink-muted)" } as const;
+const AXIS_STYLE = { fontSize: 11, fill: "var(--ink-muted)" } as const;
 
 export function TimeChart({
   title,
@@ -238,8 +238,8 @@ export function TimeChart({
   const header = (
     <div className="mb-2 flex items-start justify-between gap-2">
       <div className="min-w-0">
-        <h3 className="text-[12px] font-semibold">{title}</h3>
-        {hint && <p className="text-[11px] text-[var(--ink-muted)]">{hint}</p>}
+        <h3 className="text-[13px] font-semibold">{title}</h3>
+        {hint && <p className="text-[12px] text-[var(--ink-muted)]">{hint}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Legend order={order} unit={data.unit} />
@@ -265,10 +265,10 @@ export function TimeChart({
           <Badge tone="warning" icon="⚠">
             {t("Không lấy được metric")}
           </Badge>
-          <p className="max-w-md text-[11px] leading-relaxed text-[var(--ink-muted)]">
+          <p className="max-w-md text-[12px] leading-relaxed text-[var(--ink-muted)]">
             {data.note ?? t("Monitoring API không trả về dữ liệu cho metric này.")}
           </p>
-          <p className="mono text-[10px] text-[var(--ink-muted)]">{data.metric}</p>
+          <p className="mono text-[11px] text-[var(--ink-muted)]">{data.metric}</p>
         </div>
       </div>
     );
@@ -421,18 +421,18 @@ export function StatTile({
 
   return (
     <div className="rounded-lg border px-3 py-2" style={{ background: "var(--surface-1)" }}>
-      <p className="text-[11px] text-[var(--ink-muted)]">{label}</p>
-      <p className="tnum mt-0.5 flex items-baseline gap-1 text-[20px] font-semibold leading-none">
+      <p className="text-[12px] text-[var(--ink-muted)]">{label}</p>
+      <p className="tnum mt-0.5 flex items-baseline gap-1 text-[21px] font-semibold leading-none">
         {/* Màu trạng thái luôn đi kèm icon + chữ, không bao giờ là kênh duy nhất. */}
         {icon && tone !== "neutral" && (
-          <span aria-hidden style={{ color, fontSize: 13 }}>
+          <span aria-hidden style={{ color, fontSize: 14 }}>
             {icon}
           </span>
         )}
         <span style={{ color }}>{value}</span>
-        {unit && <span className="text-[11px] font-normal text-[var(--ink-muted)]">{unit}</span>}
+        {unit && <span className="text-[12px] font-normal text-[var(--ink-muted)]">{unit}</span>}
       </p>
-      {sub && <p className="mt-1 text-[11px] text-[var(--ink-secondary)]">{sub}</p>}
+      {sub && <p className="mt-1 text-[12px] text-[var(--ink-secondary)]">{sub}</p>}
     </div>
   );
 }

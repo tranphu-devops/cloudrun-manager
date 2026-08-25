@@ -21,6 +21,8 @@ export const JA: Dictionary = {
   " · đang hiển thị {n} dòng": " · {n} 行を表示中",
   " · dữ liệu {ago}": " · データは{ago}時点",
   "— không có lịch": "— スケジュールなし",
+  "↑ Cũ nhất trước": "↑ 古い順",
+  "↓ Mới nhất trước": "↓ 新しい順",
   "…": "…",
   "“CPU luôn được cấp” tính tiền CPU cho toàn bộ thời gian instance tồn tại, không chỉ lúc xử lý request. Chỉ cần bật khi app có việc chạy nền ngoài request (worker, cron trong process).":
     "「CPUを常に割り当て」はインスタンスが存在する間ずっとCPU料金が発生し、リクエスト処理中に限りません。リクエスト以外のバックグラウンド処理（ワーカー、プロセス内cron）がある場合のみオンにしてください。",
@@ -238,6 +240,7 @@ export const JA: Dictionary = {
   "Điều hướng": "ナビゲーション",
   "{vars} do Cloud Run tự quản, không đặt tay được.":
     "{vars} はCloud Runが自動管理しており、手動では設定できません。",
+  "Đảo chiều hiển thị log": "ログの並び順を反転",
   "Độ tin cậy": "信頼性",
   "Độ tươi của dữ liệu đang hiển thị": "表示中データの鮮度",
   "Đối chiếu với metricDescriptors": "metricDescriptorsと照合",
@@ -258,6 +261,7 @@ export const JA: Dictionary = {
   "Gắn nhãn môi trường": "環境ラベルを設定",
   "Gắn nhãn…": "ラベルを設定…",
   ghim: "ピン留め",
+  "Giao diện": "テーマ",
   "Giá trị": "値",
   "Giữ tối đa {max} dòng trong bộ nhớ · bấm một dòng để xem JSON gốc":
     "メモリ上に最大{max}行保持 · 行をクリックすると元のJSONを表示",
@@ -360,6 +364,7 @@ export const JA: Dictionary = {
     "service/regionのフィルタを設定済みでLog Explorerを開く",
   "Mở URL ↗": "URLを開く ↗",
   "mỗi điểm = {align}": "1ポイント = {align}",
+  "Monokai dim": "Monokai dim",
   "Mọi mức độ": "すべての深刻度",
   "Mọi revision": "すべてのrevision",
   "mỗi tháng, theo GCP": "月あたり、GCP基準",
@@ -418,6 +423,7 @@ export const JA: Dictionary = {
   RPS: "RPS",
   "Sắp xếp: chi phí ước lượng": "並び替え: 見積もりコスト",
   "Sắp xếp: lần chạy gần nhất": "並び替え: 直近の実行",
+  "Sáng": "ライト",
   "Sắp xếp: mức độ vấn đề": "並び替え: 問題の深刻度",
   "Sắp xếp: RPS": "並び替え: RPS",
   "Sắp xếp: số instance": "並び替え: instance数",
@@ -474,6 +480,7 @@ export const JA: Dictionary = {
   "Tất cả project": "すべてのproject",
   "Tên": "名前",
   "TÊN_BIẾN": "変数名",
+  "Tối": "ダーク",
   "Thao tác ghi trên project này sẽ luôn cần gõ tên service.":
     "このprojectでの書き込みは常にservice名の入力が必要になります。",
   "Thao tác này tạo một revision mới": "この操作は新しいrevisionを作成します",
@@ -521,6 +528,7 @@ export const JA: Dictionary = {
   "Traffic đang được ghim vào revision cụ thể thay vì LATEST. Mọi revision mới tạo ra (kể cả khi bạn sửa env) sẽ không nhận traffic cho tới khi traffic được chuyển sang.":
     "trafficはLATESTではなく特定のrevisionにピン留めされています。新しく作られるrevision（envの変更で作られるものも含む）はtrafficが切り替えられるまで一切受け取りません。",
   "traffic ghim": "trafficピン留め",
+  "Traffic ghim": "trafficピン留め",
   "Traffic ghim — revision mới không nhận traffic": "trafficピン留め — 新しいrevisionは受け取らない",
   "Traffic ghim vào revision cụ thể": "trafficが特定のrevisionにピン留め",
   "Trạng thái": "状態",

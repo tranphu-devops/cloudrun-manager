@@ -37,7 +37,7 @@ export function OverviewTab({
   const errTone = err === undefined ? "neutral" : err >= 0.05 ? "critical" : err >= 0.01 ? "warning" : "good";
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       {s.health === "notReady" && (
         <Notice tone="critical" icon="✕">
           {t("Service đang ở trạng thái không ready.")}
@@ -165,14 +165,14 @@ export function OverviewTab({
         <div className="flex flex-col gap-3">
           <Card title="Traffic">
             {detail.traffic.length === 0 ? (
-              <p className="text-[12px] text-[var(--ink-muted)]">
+              <p className="text-[13px] text-[var(--ink-muted)]">
                 {t("Không khai báo traffic — 100% về revision mới nhất (mặc định của Cloud Run).")}
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {/* Tên `tr`, không phải `t` — `t` đã là hàm dịch trong scope này. */}
                 {detail.traffic.map((tr, i) => (
-                  <li key={i} className="flex items-center gap-2 text-[12px]">
+                  <li key={i} className="flex items-center gap-2 text-[13px]">
                     <span className="tnum w-10 shrink-0 text-right font-semibold">{tr.percent}%</span>
                     {/* Track có bề rộng cố định: thanh 100% mà cho co giãn theo flex sẽ
                         đẩy tên revision ra khỏi khung. */}
@@ -240,7 +240,7 @@ export function OverviewTab({
               const ok = c2.state === "CONDITION_SUCCEEDED";
               const pending = c2.state.includes("PENDING") || c2.state.includes("RECONCILING");
               return (
-                <li key={i} className="flex flex-wrap items-baseline gap-2 text-[11px]">
+                <li key={i} className="flex flex-wrap items-baseline gap-2 text-[12px]">
                   <Badge tone={ok ? "good" : pending ? "warning" : "critical"} icon={ok ? "✓" : pending ? "◐" : "✕"}>
                     {c2.type}
                   </Badge>
@@ -257,7 +257,7 @@ export function OverviewTab({
         <Card title="Labels & annotations">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h3 className="mb-1 text-[11px] font-semibold text-[var(--ink-secondary)]">Labels</h3>
+              <h3 className="mb-1 text-[12px] font-semibold text-[var(--ink-secondary)]">Labels</h3>
               <KeyValue
                 items={
                   Object.keys(detail.labels).length === 0
@@ -270,7 +270,7 @@ export function OverviewTab({
               />
             </div>
             <div>
-              <h3 className="mb-1 text-[11px] font-semibold text-[var(--ink-secondary)]">Annotations</h3>
+              <h3 className="mb-1 text-[12px] font-semibold text-[var(--ink-secondary)]">Annotations</h3>
               <KeyValue
                 items={
                   Object.keys(detail.annotations).length === 0

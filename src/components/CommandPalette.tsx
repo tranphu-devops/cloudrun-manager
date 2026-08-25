@@ -103,7 +103,7 @@ export function CommandPalette({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("Nhảy tới service… (Enter để mở, Esc để đóng)")}
-          className="w-full border-b bg-transparent px-3 py-2.5 text-[14px] outline-none"
+          className="w-full border-b bg-transparent px-3 py-2.5 text-[15px] outline-none"
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               onClose();
@@ -126,7 +126,7 @@ export function CommandPalette({
 
         <ul ref={listRef} className="max-h-[420px] overflow-y-auto">
           {results.length === 0 && (
-            <li className="px-3 py-4 text-center text-[12px] text-[var(--ink-muted)]">
+            <li className="px-3 py-4 text-center text-[13px] text-[var(--ink-muted)]">
               {t("Không có service nào khớp “{query}”.", { query })}
             </li>
           )}
@@ -140,13 +140,13 @@ export function CommandPalette({
                   onClose();
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px]",
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-left text-[14px]",
                   i === cursor && "bg-[var(--surface-2)]",
                 )}
               >
                 <HealthDot health={s.health} message={s.healthMessage} />
                 <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="shrink-0 text-[11px] text-[var(--ink-muted)]">
+                <span className="shrink-0 text-[12px] text-[var(--ink-muted)]">
                   {regionLabel(s.region)}
                 </span>
               </button>

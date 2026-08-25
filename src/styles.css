@@ -53,7 +53,13 @@
   --focus: #2a78d6;
 }
 
-/* Dark là một bộ bước màu được CHỌN cho nền tối, không phải đảo ngược light. */
+/*
+ * Dark là một bộ bước màu được CHỌN cho nền tối, không phải đảo ngược light.
+ *
+ * Trình chọn theme không còn mục "theo hệ thống" — React luôn đóng dấu `data-theme` lên
+ * <html>. Khối media này chỉ còn tác dụng ở khoảnh khắc trước khi React mount: máy đang để
+ * dark sẽ thấy nền tối ngay thay vì loé trắng rồi mới đổi.
+ */
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
@@ -113,8 +119,63 @@
   --focus: #3987e5;
 }
 
+/*
+ * Monokai dim — biến thể tối thứ hai, cho người quen bảng màu editor.
+ *
+ * CHỈ đổi surface/ink/grid/axis: `--series-*` giữ nguyên bộ của dark mode vì đó là bộ đã
+ * qua validate_palette.js (an toàn cho người mù màu ở 4 slot đầu, pairlist adjacent).
+ * Bảng màu Monokai gốc (pink/green/yellow/purple) chưa từng được kiểm tra theo tiêu chí
+ * đó, nên dùng nó cho chart là đánh đổi tính đọc được lấy thẩm mỹ — xem chú thích đầu file.
+ */
+:root[data-theme="monokai"] {
+  color-scheme: dark;
+
+  --surface-1: #22231e;
+  --surface-page: #1b1c18;
+  --surface-2: #2b2c26;
+
+  --ink-primary: #d6d6cc;
+  --ink-secondary: #a6a69b;
+  --ink-muted: #75715e;
+
+  --grid: #32332c;
+  --axis: #414237;
+  --hairline: rgb(214 214 204 / 0.12);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --delta-good: #0ca30c;
+  --focus: #3987e5;
+}
+
 * {
   border-color: var(--hairline);
+}
+
+/*
+ * Header bảng dính khi cuộn.
+ *
+ * Sticky đặt lên `<th>` chứ không lên `<thead>`/`<tr>`: WebKit (WKWebView trên macOS) bỏ
+ * qua `position: sticky` trên nhóm hàng, nên đặt ở thead thì Windows chạy còn macOS thì
+ * không — một lỗi chỉ lộ ra trên máy khác.
+ *
+ * Nền phải tô tường minh, nếu không nội dung cuộn bên dưới sẽ hiện xuyên qua header. Viền
+ * dưới dùng box-shadow thay cho `border-bottom` vì border của ô sticky bị cắt mất khi ô
+ * tách khỏi dòng.
+ */
+.sticky-head th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  box-shadow: inset 0 -1px 0 var(--hairline);
 }
 
 html,
@@ -128,7 +189,7 @@ body {
   background: var(--surface-page);
   color: var(--ink-primary);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   /* App desktop: không cho chọn text linh tinh, nhưng vùng dữ liệu thì cho (bên dưới). */
   user-select: none;

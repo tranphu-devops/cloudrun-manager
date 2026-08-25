@@ -40,7 +40,7 @@ export function Button({
 }) {
   const base =
     "inline-flex items-center justify-center gap-1.5 rounded-md border font-medium transition-colors disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap";
-  const sizes = { sm: "h-7 px-2.5 text-[12px]", md: "h-8 px-3 text-[13px]" }[size];
+  const sizes = { sm: "h-7 px-2.5 text-[13px]", md: "h-8 px-3 text-[14px]" }[size];
   const variants: Record<ButtonVariant, string> = {
     primary: "border-transparent text-white hover:brightness-110",
     secondary: "hover:bg-[var(--surface-2)]",
@@ -109,7 +109,7 @@ export function Input({
     <input
       {...rest}
       className={cn(
-        "h-8 min-w-0 rounded-md border px-2 text-[13px] outline-none",
+        "h-8 min-w-0 rounded-md border px-2 text-[14px] outline-none",
         "bg-[var(--surface-1)] placeholder:text-[var(--ink-muted)]",
         invalid && "border-[var(--status-critical)]",
         className,
@@ -127,7 +127,7 @@ export function Select({
     <select
       {...rest}
       className={cn(
-        "h-8 rounded-md border px-2 text-[13px] outline-none bg-[var(--surface-1)]",
+        "h-8 rounded-md border px-2 text-[14px] outline-none bg-[var(--surface-1)]",
         className,
       )}
     >
@@ -156,7 +156,7 @@ export function Toggle({
       aria-checked={checked}
       title={hint}
       onClick={() => onChange(!checked)}
-      className="inline-flex items-center gap-2 rounded-md border px-2 h-8 text-[12px] hover:bg-[var(--surface-2)]"
+      className="inline-flex items-center gap-2 rounded-md border px-2 h-8 text-[13px] hover:bg-[var(--surface-2)]"
       style={{ background: "var(--surface-1)" }}
     >
       <span
@@ -203,7 +203,7 @@ export function Card({
     >
       {(title || actions) && (
         <header className="flex items-center justify-between gap-2 border-b px-3 py-2">
-          <h2 className="text-[12px] font-semibold tracking-wide uppercase text-[var(--ink-secondary)]">
+          <h2 className="text-[13px] font-semibold tracking-wide uppercase text-[var(--ink-secondary)]">
             {title}
           </h2>
           {actions}
@@ -211,6 +211,49 @@ export function Card({
       )}
       <div className={cn("p-3", bodyClassName)}>{children}</div>
     </section>
+  );
+}
+
+/**
+ * Khung cuộn cho bảng — dùng chung với class `.sticky-head` trên `<thead>`.
+ *
+ * `position: sticky` bám vào scroll container GẦN NHẤT. Các wrapper cũ dùng
+ * `overflow-x-auto` hoặc `overflow-hidden`: cả hai đều tạo scroll container nhưng không
+ * cuộn được theo chiều dọc, nên header sticky bên trong sẽ đứng yên theo bảng và trôi mất
+ * cùng nó. Vì vậy khung này phải vừa tự cuộn cả hai chiều, vừa bị chặn chiều cao.
+ *
+ * `fill` dùng khi khung nằm trong một cột flex đã có chiều cao: bảng ăn hết chỗ trống còn
+ * lại và chạy tới đáy cửa sổ. Không có `fill` thì chặn theo `maxHeight`.
+ *
+ * `minHeight` đi kèm `fill` để bảng không bị bóp về 0 khi phần đầu trang quá cao. Đặt bằng
+ * inline style chứ không bằng class Tailwind: `min-h-0` (do `fill` thêm vào) và một class
+ * `min-h-[…]` là hai utility cùng thuộc tính, thứ tự thắng thua do thứ tự trong stylesheet
+ * quyết định chứ không phải thứ tự viết trong `className` — dễ im lặng chọn nhầm cái.
+ */
+export function TableScroll({
+  children,
+  className,
+  maxHeight = "60vh",
+  minHeight,
+  fill = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  maxHeight?: string;
+  minHeight?: string;
+  fill?: boolean;
+}) {
+  return (
+    <div
+      className={cn("overflow-auto rounded-lg border", fill && "min-h-0 flex-1", className)}
+      style={{
+        background: "var(--surface-1)",
+        maxHeight: fill ? undefined : maxHeight,
+        minHeight: fill ? minHeight : undefined,
+      }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -245,7 +288,7 @@ export function Badge({
   return (
     <span
       title={title}
-      className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium"
+      className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[12px] font-medium"
       style={{ borderColor: BADGE_COLOR[tone], color: BADGE_COLOR[tone] }}
     >
       {icon && <span aria-hidden>{icon}</span>}
@@ -268,16 +311,16 @@ export function Field({
   const id = useId();
   return (
     <label htmlFor={id} className={cn("flex flex-col gap-1", className)}>
-      <span className="text-[11px] font-medium text-[var(--ink-secondary)]">{label}</span>
+      <span className="text-[12px] font-medium text-[var(--ink-secondary)]">{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-[var(--ink-muted)]">{hint}</span>}
+      {hint && <span className="text-[12px] text-[var(--ink-muted)]">{hint}</span>}
     </label>
   );
 }
 
 export function KeyValue({ items }: { items: Array<[ReactNode, ReactNode]> }) {
   return (
-    <dl className="grid grid-cols-[minmax(120px,auto)_1fr] gap-x-4 gap-y-1.5 text-[12px]">
+    <dl className="grid grid-cols-[minmax(120px,auto)_1fr] gap-x-4 gap-y-1.5 text-[13px]">
       {items.map(([k, v], i) => (
         <div key={i} className="contents">
           <dt className="text-[var(--ink-muted)]">{k}</dt>
@@ -312,7 +355,7 @@ export function Tabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(t.id)}
             className={cn(
-              "relative -mb-px flex items-center gap-1.5 px-3 py-2 text-[13px] transition-colors",
+              "relative -mb-px flex items-center gap-1.5 px-3 py-2 text-[14px] transition-colors",
               active
                 ? "font-semibold text-[var(--ink-primary)]"
                 : "text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]",
@@ -390,7 +433,7 @@ export function Dialog({
         style={{ background: "var(--surface-1)", width, maxWidth: "100%" }}
       >
         <header className="flex items-center justify-between border-b px-4 py-3">
-          <h2 className="text-[14px] font-semibold">{title}</h2>
+          <h2 className="text-[15px] font-semibold">{title}</h2>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={t("Đóng")}>
             ✕
           </Button>
@@ -469,7 +512,7 @@ export function ErrorBox({
 
   return (
     <div
-      className="rounded-md border p-3 text-[12px]"
+      className="rounded-md border p-3 text-[13px]"
       style={{ borderColor: BADGE_COLOR[tone], background: "var(--surface-1)" }}
     >
       <div className="mb-1.5 flex items-center gap-2">
@@ -477,16 +520,16 @@ export function ErrorBox({
           {heading}
         </Badge>
         {error.status !== null && (
-          <span className="text-[11px] text-[var(--ink-muted)]">HTTP {error.status}</span>
+          <span className="text-[12px] text-[var(--ink-muted)]">HTTP {error.status}</span>
         )}
       </div>
       <p className="selectable whitespace-pre-wrap leading-relaxed">{error.message}</p>
       {error.detail && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-[11px] text-[var(--ink-muted)]">
+          <summary className="cursor-pointer text-[12px] text-[var(--ink-muted)]">
             {t("Chi tiết kỹ thuật")}
           </summary>
-          <pre className="selectable mono mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded border p-2 text-[11px]">
+          <pre className="selectable mono mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded border p-2 text-[12px]">
             {error.detail}
           </pre>
         </details>
@@ -513,7 +556,7 @@ export function Notice({
 }) {
   return (
     <div
-      className="flex gap-2 rounded-md border p-2.5 text-[12px] leading-relaxed"
+      className="flex gap-2 rounded-md border p-2.5 text-[13px] leading-relaxed"
       style={{ borderColor: BADGE_COLOR[tone], background: "var(--surface-1)" }}
     >
       {icon && (
@@ -534,8 +577,8 @@ export function EmptyState({ icon, title, hint }: { icon?: string; title: string
           {icon}
         </span>
       )}
-      <p className="text-[13px] font-medium">{title}</p>
-      {hint && <p className="max-w-md text-[12px] text-[var(--ink-muted)]">{hint}</p>}
+      <p className="text-[14px] font-medium">{title}</p>
+      {hint && <p className="max-w-md text-[13px] text-[var(--ink-muted)]">{hint}</p>}
     </div>
   );
 }
@@ -544,7 +587,7 @@ export function Loading({ label }: { label?: string }) {
   const t = useT();
   const text = label ?? t("Đang tải…");
   return (
-    <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-[var(--ink-muted)]">
+    <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[var(--ink-muted)]">
       <Spinner />
       {text}
     </div>
@@ -620,7 +663,7 @@ export function CopyButton({
 export function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd
-      className="mono rounded border px-1 py-0.5 text-[10px]"
+      className="mono rounded border px-1 py-0.5 text-[11px]"
       style={{ background: "var(--surface-2)" }}
     >
       {children}
@@ -665,7 +708,7 @@ export function ToastHost({ children }: { children: ReactNode }) {
             style={{ background: "var(--surface-1)", borderColor: BADGE_COLOR[toast.tone] }}
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[13px] font-semibold">{toast.title}</p>
+              <p className="text-[14px] font-semibold">{toast.title}</p>
               <button
                 className="text-[var(--ink-muted)]"
                 onClick={() => setItems((v) => v.filter((x) => x.id !== toast.id))}
@@ -675,7 +718,7 @@ export function ToastHost({ children }: { children: ReactNode }) {
               </button>
             </div>
             {toast.body && (
-              <p className="selectable mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-[var(--ink-secondary)]">
+              <p className="selectable mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--ink-secondary)]">
                 {toast.body}
               </p>
             )}

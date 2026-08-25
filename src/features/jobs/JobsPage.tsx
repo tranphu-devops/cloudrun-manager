@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge, Button, Dialog, ErrorBox, Input, Loading, Notice, Select, useToast } from "../../components/ui";
+import { Badge, Button, Dialog, ErrorBox, Input, Loading, Notice, Select, TableScroll, useToast } from "../../components/ui";
 import { StatTile } from "../../components/charts";
 import { ago, agoSeconds, dateTime, num } from "../../lib/format";
 import { useT, useTNode } from "../../lib/i18n";
@@ -119,8 +119,10 @@ export function JobsPage({
   if (q.isLoading) return <Loading label={t("Đang lấy Jobs và Scheduler…")} />;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-      <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+      {/* Phần đầu tự cuộn, bảng lấy hết chiều cao còn lại — xem chú thích ở StatisticsPage. */}
+      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto">
+        <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
 
       {q.data?.schedulerUnavailable && (
         <Notice tone="warning" icon="⚠">
@@ -195,7 +197,7 @@ export function JobsPage({
           placeholder={t("tìm theo tên, source path, image, hoặc cron…")}
           className="w-80"
         />
-        <label className="flex items-center gap-1.5 text-[12px]">
+        <label className="flex items-center gap-1.5 text-[13px]">
           <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} />
           {t("Chỉ hiện job có vấn đề")}
         </label>
@@ -205,18 +207,19 @@ export function JobsPage({
           <option value="lastRun">{t("Sắp xếp: lần chạy gần nhất")}</option>
           <option value="name">{t("Sắp xếp: tên")}</option>
         </Select>
-        <span className="text-[11px] text-[var(--ink-muted)]">
+        <span className="text-[12px] text-[var(--ink-muted)]">
           {t("{shown}/{total} job", { shown: rows.length, total: stats.total })}
           {q.data ? t(" · dữ liệu {ago}", { ago: agoSeconds(q.data.ageSeconds) }) : ""}
         </span>
         <Button size="sm" variant="ghost" className="ml-auto" loading={q.isFetching} onClick={() => void refresh()}>
           ⟳ Reload
         </Button>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border" style={{ background: "var(--surface-1)" }}>
-        <table className="w-full text-[11px]">
-          <thead style={{ background: "var(--surface-2)" }}>
+      <TableScroll fill minHeight="160px">
+        <table className="w-full text-[12px]">
+          <thead className="sticky-head">
             <tr className="text-left">
               <th className="px-2 py-1.5 font-medium">Job</th>
               <th className="px-2 py-1.5 font-medium">{t("Cron · timezone")}</th>
@@ -300,7 +303,7 @@ export function JobsPage({
             })}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
 
       <JobDetailDialog
         job={detail}
@@ -383,7 +386,7 @@ function JobDetailDialog({
           </Notice>
         ))}
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[12px]">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[13px]">
           {(
             [
               ["Region", job.region],
@@ -415,10 +418,10 @@ function JobDetailDialog({
 
         {job.schedulers.length > 0 && (
           <div>
-            <h3 className="mb-1.5 text-[12px] font-semibold">{t("Lịch chạy")}</h3>
+            <h3 className="mb-1.5 text-[13px] font-semibold">{t("Lịch chạy")}</h3>
             <div className="flex flex-col gap-1.5">
               {job.schedulers.map((s) => (
-                <div key={s.name} className="flex flex-wrap items-center gap-2 rounded border px-2 py-1.5 text-[11px]">
+                <div key={s.name} className="flex flex-wrap items-center gap-2 rounded border px-2 py-1.5 text-[12px]">
                   <span className="mono font-medium">{s.name}</span>
                   <code className="mono rounded border px-1">{s.schedule}</code>
                   <span className="text-[var(--ink-muted)]">{s.timeZone}</span>
@@ -480,7 +483,7 @@ function JobDetailDialog({
 
         {requiresTypedConfirm && (
           <div className="rounded-md border p-2.5" style={{ borderColor: "var(--status-critical)" }}>
-            <p className="mb-1.5 text-[12px]">
+            <p className="mb-1.5 text-[13px]">
               {t("Gõ đúng tên job")} <code className="mono">{job.name}</code>{" "}
               {t("để mở các thao tác ghi:")}
             </p>
@@ -494,7 +497,7 @@ function JobDetailDialog({
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-[12px]">
+        <label className="flex items-center gap-2 text-[13px]">
           <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
           {t("Chạy dù đang có execution dở (bỏ lớp chặn chồng lấn)")}
         </label>
@@ -503,7 +506,7 @@ function JobDetailDialog({
 
         <div className="flex items-center gap-2">
           {readOnly && (
-            <span className="text-[11px] text-[var(--ink-muted)]">
+            <span className="text-[12px] text-[var(--ink-muted)]">
               {t("Đang ở chế độ chỉ đọc — bật “Cho ghi” ở thanh trên để chạy job.")}
             </span>
           )}

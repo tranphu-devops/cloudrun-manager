@@ -1,4 +1,4 @@
-import { Badge, ErrorBox, Loading, Notice } from "../../../components/ui";
+import { Badge, ErrorBox, Loading, Notice, TableScroll } from "../../../components/ui";
 import { HealthDot } from "../../service-list/Sidebar";
 import { ago, dateTime, shortImage, shortSha } from "../../../lib/format";
 import { useT } from "../../../lib/i18n";
@@ -17,7 +17,7 @@ export function RevisionsTab({
   const q = useRevisions(project, region, service);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <Notice tone="info" icon="ℹ">
         {t(
           "Tab này chỉ để xem. App không chuyển traffic và không rollback — hai thao tác đó ảnh hưởng trực tiếp tới traffic đang chạy nên để trên GCP Console, nơi có sẵn xác nhận và audit của Google.",
@@ -28,13 +28,13 @@ export function RevisionsTab({
       {q.isLoading && <Loading label={t("Đang lấy revision…")} />}
 
       {q.data && q.data.length === 0 && (
-        <p className="text-[12px] text-[var(--ink-muted)]">{t("Không có revision nào.")}</p>
+        <p className="text-[13px] text-[var(--ink-muted)]">{t("Không có revision nào.")}</p>
       )}
 
       {q.data && q.data.length > 0 && (
-        <div className="overflow-hidden rounded-lg border" style={{ background: "var(--surface-1)" }}>
-          <table className="w-full text-[11px]">
-            <thead style={{ background: "var(--surface-2)" }}>
+        <TableScroll fill>
+          <table className="w-full text-[12px]">
+            <thead className="sticky-head">
               <tr className="text-left">
                 <th className="px-2 py-1.5 font-medium">{t("Revision")}</th>
                 <th className="px-2 py-1.5 font-medium">{t("Traffic")}</th>
@@ -111,7 +111,7 @@ export function RevisionsTab({
               })}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </div>
   );
