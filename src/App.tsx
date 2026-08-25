@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CommandPalette } from "./components/CommandPalette";
 import { NavRail, type View } from "./components/NavRail";
-import { TopBar } from "./components/TopBar";
+import { TopBar, type ThemeId } from "./components/TopBar";
 import { Button, EmptyState, ErrorBox, Loading, Notice } from "./components/ui";
 import { BillingPage } from "./features/billing/BillingPage";
 import { JobsPage } from "./features/jobs/JobsPage";
@@ -24,15 +24,25 @@ import {
 } from "./lib/queries";
 import type { CmdError, EnvLabel, ServiceSummary, VaultStatus } from "./lib/types";
 
-type Theme = "light" | "dark" | "system";
+type Theme = ThemeId;
+
+/** Chưa từng chọn thì lần đầu theo hệ điều hành — sau đó là lựa chọn thủ công, không đổi nữa. */
+function systemDefault(): Theme {
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
 
 function readTheme(): Theme {
   try {
     const v = window.localStorage.getItem("crc.theme");
-    return v === "light" || v === "dark" ? v : "system";
+    return v === "light" || v === "dark" || v === "monokai" ? v : systemDefault();
   } catch {
-    // WebView có thể bị chặn storage; theo hệ điều hành là mặc định hợp lý.
-    return "system";
+    // WebView có thể bị chặn storage; vẫn phải trả về một theme cụ thể vì không còn
+    // lựa chọn "theo hệ thống" để rơi về.
+    return systemDefault();
   }
 }
 
@@ -67,14 +77,12 @@ export default function App() {
     retry: false,
   });
 
-  // Áp theme lên <html> để CSS custom property đổi theo.
+  // Áp theme lên <html> để CSS custom property đổi theo. Luôn đóng dấu `data-theme`:
+  // không còn chế độ "theo hệ thống" nên không bao giờ để thuộc tính này trống.
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
     try {
-      if (theme === "system") window.localStorage.removeItem("crc.theme");
-      else window.localStorage.setItem("crc.theme", theme);
+      window.localStorage.setItem("crc.theme", theme);
     } catch {
       // Không lưu được thì thôi, không phải lỗi đáng báo.
     }
@@ -194,9 +202,7 @@ export default function App() {
         onRefresh={() => void refreshAll()}
         onOpenPalette={() => setPaletteOpen(true)}
         theme={theme}
-        onThemeToggle={() =>
-          setTheme((t) => (t === "system" ? "light" : t === "light" ? "dark" : "system"))
-        }
+        onThemeChange={setTheme}
       />
 
       {auth.isError && (

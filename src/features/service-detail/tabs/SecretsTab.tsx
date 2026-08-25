@@ -87,7 +87,7 @@ function RevealPanel({
           >
             {t("👁 Hiện giá trị version {version}", { version })}
           </Button>
-          <span className="text-[11px] text-[var(--ink-muted)]">
+          <span className="text-[12px] text-[var(--ink-muted)]">
             {t(
               "Lần xem sẽ được ghi vào audit log trên máy (chỉ tên secret + version, không ghi giá trị).",
             )}
@@ -103,7 +103,7 @@ function RevealPanel({
         <Badge tone="warning" icon="👁">
           {t("đang hiện · tự ẩn sau {sec}s", { sec: left })}
         </Badge>
-        <span className="tnum text-[11px] text-[var(--ink-muted)]">
+        <span className="tnum text-[12px] text-[var(--ink-muted)]">
           {t("{bytes} byte · {lines} dòng", { bytes: value.byteLen, lines: value.lineCount })}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
@@ -124,7 +124,7 @@ function RevealPanel({
       )}
 
       <pre
-        className="mono selectable max-h-64 overflow-auto whitespace-pre-wrap break-all rounded border p-2 text-[11px]"
+        className="mono selectable max-h-64 overflow-auto whitespace-pre-wrap break-all rounded border p-2 text-[12px]"
         style={{ background: "var(--surface-2)" }}
       >
         {value.value}
@@ -164,7 +164,7 @@ export function SecretsTab({
   }, [selected]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       {!canReveal && (
         <Notice tone="info" icon="🔒">
           {tNode(
@@ -184,7 +184,7 @@ export function SecretsTab({
         })}
       >
         {usedNames.size === 0 ? (
-          <p className="text-[12px] text-[var(--ink-muted)]">
+          <p className="text-[13px] text-[var(--ink-muted)]">
             {t("Service này không tham chiếu secret nào — không qua env, không qua volume mount.")}
           </p>
         ) : (
@@ -196,7 +196,7 @@ export function SecretsTab({
                 .map((e) => (
                   <div
                     key={`${c.index}-${e.name}`}
-                    className="flex flex-wrap items-center gap-2 border-b pb-2 text-[12px] last:border-b-0 last:pb-0"
+                    className="flex flex-wrap items-center gap-2 border-b pb-2 text-[13px] last:border-b-0 last:pb-0"
                   >
                     <Badge tone="info" icon="🔑">
                       env
@@ -206,7 +206,7 @@ export function SecretsTab({
                     <code className="mono">{e.secret}</code>
                     <Badge>version {e.version}</Badge>
                     {e.version === "latest" && (
-                      <span className="text-[11px] text-[var(--ink-muted)]">
+                      <span className="text-[12px] text-[var(--ink-muted)]">
                         {tNode(
                           "dùng {latest}: revision mới sẽ tự lấy version mới nhất, revision đang chạy thì không",
                           { latest: <code className="mono">latest</code> },
@@ -233,7 +233,7 @@ export function SecretsTab({
             {detail.secretVolumes.map((v) => (
               <div
                 key={v.volumeName}
-                className="flex flex-wrap items-center gap-2 border-b pb-2 text-[12px] last:border-b-0 last:pb-0"
+                className="flex flex-wrap items-center gap-2 border-b pb-2 text-[13px] last:border-b-0 last:pb-0"
               >
                 <Badge tone="serious" icon="📁">
                   volume
@@ -260,7 +260,7 @@ export function SecretsTab({
           title={`Secret: ${selected}`}
           actions={
             <div className="flex items-center gap-2">
-              <Select value={version} onChange={(e) => setVersion(e.target.value)} className="h-7 text-[11px]">
+              <Select value={version} onChange={(e) => setVersion(e.target.value)} className="h-7 text-[12px]">
                 <option value="latest">latest</option>
                 {(versions.data ?? []).map((v) => (
                   <option key={v.version} value={v.version} disabled={v.state !== "ENABLED"}>
@@ -277,9 +277,9 @@ export function SecretsTab({
           <div className="flex flex-col gap-3">
             <ErrorBox error={versions.error} />
             {versions.data && versions.data.length > 0 && (
-              <div className="overflow-hidden rounded border">
-                <table className="w-full text-[11px]">
-                  <thead style={{ background: "var(--surface-2)" }}>
+              <div className="max-h-56 overflow-auto rounded border">
+                <table className="w-full text-[12px]">
+                  <thead className="sticky-head">
                     <tr className="text-left">
                       <th className="px-2 py-1 font-medium">{t("Version")}</th>
                       <th className="px-2 py-1 font-medium">{t("Trạng thái")}</th>
@@ -321,8 +321,8 @@ export function SecretsTab({
       {others.length > 0 && (
         <Card title={t("Secret khác trong project ({count})", { count: others.length })}>
           <div className="max-h-72 overflow-auto">
-            <table className="w-full text-[11px]">
-              <thead className="sticky top-0" style={{ background: "var(--surface-2)" }}>
+            <table className="w-full text-[12px]">
+              <thead className="sticky-head">
                 <tr className="text-left">
                   <th className="px-2 py-1 font-medium">{t("Tên")}</th>
                   <th className="px-2 py-1 font-medium">{t("Service đang dùng")}</th>

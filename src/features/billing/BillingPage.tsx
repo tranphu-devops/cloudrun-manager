@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { StatTile } from "../../components/charts";
-import { Badge, Button, Card, EmptyState, ErrorBox, Input, Loading, Notice, Select } from "../../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorBox, Input, Loading, Notice, Select, TableScroll } from "../../components/ui";
 import { num, regionLabel } from "../../lib/format";
 import { useT, useTNode } from "../../lib/i18n";
 import { apiV2 } from "../../lib/ipc";
@@ -74,8 +74,10 @@ export function BillingPage({ project }: { project: string }) {
   if (q.isLoading) return <Loading label={t("Đang ước lượng chi phí từ metric tải…")} />;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-      <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3">
+      {/* Phần đầu tự cuộn, bảng lấy hết chiều cao còn lại — xem chú thích ở StatisticsPage. */}
+      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto">
+        <ErrorBox error={q.error} onRetry={() => void q.refetch()} />
 
       {/* Nhãn "ước lượng" đặt cao nhất, trước cả số — để không ai đọc con số mà quên nó là ước lượng. */}
       <Notice tone="warning" icon="≈">
@@ -157,7 +159,7 @@ export function BillingPage({ project }: { project: string }) {
           <option value="cpu">{t("Sắp xếp: vCPU-giây")}</option>
           <option value="name">{t("Sắp xếp: tên")}</option>
         </Select>
-        <span className="text-[11px] text-[var(--ink-muted)]">
+        <span className="text-[12px] text-[var(--ink-muted)]">
           {t("{n} dòng · cửa sổ {win} phút", {
             n: rows.length,
             win: report?.windowMinutes ?? "–",
@@ -166,14 +168,15 @@ export function BillingPage({ project }: { project: string }) {
         <Button size="sm" variant="ghost" className="ml-auto" loading={q.isFetching} onClick={() => void q.refetch()}>
           ⟳ Reload
         </Button>
+        </div>
       </div>
 
       {rows.length === 0 ? (
         <EmptyState icon="₫" title={t("Không có dòng chi phí nào khớp")} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border" style={{ background: "var(--surface-1)" }}>
-          <table className="w-full text-[11px]">
-            <thead style={{ background: "var(--surface-2)" }}>
+        <TableScroll fill minHeight="140px">
+          <table className="w-full text-[12px]">
+            <thead className="sticky-head">
               <tr className="text-left">
                 <th className="px-2 py-1.5 font-medium">{t("Tên")}</th>
                 <th className="px-2 py-1.5 font-medium">{t("Kiểu tính tiền")}</th>
@@ -191,17 +194,23 @@ export function BillingPage({ project }: { project: string }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
 
-      {/* Bảy nguồn sai số — bắt buộc hiện trên UI, không cất trong doc. */}
+      {/*
+        Bảy nguồn sai số — bắt buộc hiện trên UI, không cất trong doc (invariant #16).
+        `shrink-0` là phần bắt buộc: bảng ở trên co giãn theo cửa sổ, khối này thì không
+        được phép bị bóp mất; nội dung dài thì tự cuộn trong thân card.
+      */}
       {report && (
         <Card
+          className="shrink-0"
+          bodyClassName="max-h-[22vh] overflow-y-auto"
           title={t("Bảy nguồn sai số của ước lượng này ({count})", {
             count: report.errorSources.length,
           })}
         >
-          <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[12px] leading-relaxed">
+          <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] leading-relaxed">
             {report.errorSources.map((s, i) => (
               <li key={i} className="selectable">
                 {s}
@@ -221,7 +230,7 @@ function CostRowView({ r }: { r: CostRow }) {
     <tr className="border-t align-top hover:bg-[var(--surface-2)]">
       <td className="px-2 py-1.5">
         <div className="mono font-medium">{r.name}</div>
-        <div className="text-[10px] text-[var(--ink-muted)]">
+        <div className="text-[11px] text-[var(--ink-muted)]">
           {r.kind === "job" ? "job" : "service"} · {regionLabel(r.region)}
           {r.tier2Region && " · tier-2"}
         </div>

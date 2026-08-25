@@ -327,6 +327,35 @@ a colour-blindness safety mechanism, not decoration** — to change it, change t
 re-run the validator; do not tweak individual hex values. Never use two y-axes. Colour binds to
 the entity (looked up by series name), never to the index of the array being rendered.
 
+**Themes:** three choices — `light` / `dark` / `monokai` (`data-theme` on `<html>`, remembered
+in `localStorage["crc.theme"]`, label table `THEME_TEXT` in `TopBar.tsx`). There is no "follow
+system" entry: the OS preference only picks the default on first launch, after which the choice
+is explicit and `data-theme` is always stamped. Monokai dim changes **only**
+surface/ink/grid/axis; `--series-*` keeps the dark set because that is the set the validator
+passed. A new theme must follow the same rule.
+
+**Type scale:** the smallest text in the app is 11px and the body default is 14px. Sizes are
+written as Tailwind arbitrary values (`text-[12px]`), so a global bump means rewriting them all
+in descending order — bumping ascending double-counts every size.
+
+**Tables:** sticky headers come from `<TableScroll>` (`components/ui.tsx`) as the wrapper plus
+the `.sticky-head` class on `<thead>`. Sticky sits on the `<th>`, not the `<thead>` — WebKit
+ignores sticky on row groups. The wrapper **must** be a real vertical scroll container: both
+`overflow-hidden` and `overflow-x-auto` create a scroll container that cannot scroll
+vertically, so the header just drifts away with the table.
+
+`fill` makes the table take the remaining height down to the bottom of the window; pair it with
+`minHeight` so a tall page header cannot squeeze the table to nothing. That only works if
+nothing above it scrolls the whole page, hence the layout rule below.
+
+**Who scrolls:** a screen that ends in a table does not scroll as a page. Statistics, Jobs and
+Billing put their notices/tiles/filters in one `overflow-y-auto` block and give the table
+`fill`. The service-detail pane (`ServiceDetail.tsx`) likewise does **not** scroll — each tab
+owns its scrolling: Overview/Scaling/Secrets/Load carry `overflow-y-auto` on their own root,
+Env/Revisions/Logs use `fill` instead. Billing's seven-error-sources card is `shrink-0` with a
+capped, scrollable body: the table above it flexes, that card must never be squeezed off screen
+(invariant #16).
+
 **Tailwind:** v4, configured in CSS. `src/styles.css` contains `@source "./";` — required
 because `vite.preview.config.ts` moves the root to `preview/`, and Tailwind would otherwise miss
 `src/` and emit near-empty CSS **with no error at all**. Do not delete that line.

@@ -308,6 +308,34 @@ chế an toàn cho người mù màu, không phải thẩm mỹ** — muốn đ�
 validator, đừng sửa từng hex. Không bao giờ dùng hai trục y. Màu gắn với thực thể (tra theo
 tên series), không gắn với index của mảng đang render.
 
+**Theme:** ba lựa chọn — `light` / `dark` / `monokai` (`data-theme` trên `<html>`, nhớ trong
+`localStorage["crc.theme"]`, bảng nhãn `THEME_TEXT` ở `TopBar.tsx`). Không còn mục "theo hệ
+thống": cài đặt của OS chỉ quyết định giá trị mặc định lần chạy đầu, sau đó là lựa chọn tường
+minh và `data-theme` luôn được đóng dấu. Monokai dim **chỉ** đổi surface/ink/grid/axis;
+`--series-*` giữ nguyên bộ của dark vì đó là bộ đã qua validator. Thêm theme mới cũng phải theo
+luật này.
+
+**Cỡ chữ:** nhỏ nhất trong app là 11px, mặc định của body là 14px. Cỡ chữ viết bằng arbitrary
+value của Tailwind (`text-[12px]`), nên muốn tăng đồng loạt thì phải thay theo thứ tự **giảm
+dần** — làm theo thứ tự tăng dần sẽ cộng dồn hai lần lên cùng một cỡ.
+
+**Bảng:** header dính dùng `<TableScroll>` (`components/ui.tsx`) bọc ngoài + class
+`.sticky-head` trên `<thead>`. Sticky đặt lên `<th>`, không lên `<thead>` — WebKit bỏ qua
+sticky trên nhóm hàng. Khung bọc **phải** là scroll container cuộn dọc thật: `overflow-hidden`
+hay `overflow-x-auto` đều tạo scroll container không cuộn dọc được, header sẽ trôi theo bảng.
+
+`fill` cho bảng ăn hết chiều cao còn lại xuống tới đáy cửa sổ; đi kèm `minHeight` để phần đầu
+trang quá cao không bóp bảng về 0. Chỉ đúng khi phía trên không có gì cuộn cả trang — xem luật
+bên dưới.
+
+**Ai cuộn:** màn hình kết thúc bằng một bảng thì không cuộn theo kiểu trang. Statistics, Jobs
+và Billing gom notice/tile/filter vào một khối `overflow-y-auto`, còn bảng nhận `fill`. Pane
+chi tiết service (`ServiceDetail.tsx`) cũng **không** cuộn — mỗi tab tự lo: Tổng
+quan/Scaling/Secrets/Tải đặt `overflow-y-auto` trên gốc của chính nó, Env/Revisions/Log dùng
+`fill`. Card "bảy nguồn sai số" ở Billing là `shrink-0`, thân card tự cuộn và bị chặn chiều
+cao: bảng phía trên co giãn, còn card đó không bao giờ được phép bị đẩy khỏi màn hình
+(invariant #16).
+
 **Tailwind:** v4, cấu hình bằng CSS. `src/styles.css` có `@source "./";` — cần vì
 `vite.preview.config.ts` đổi root sang `preview/` và Tailwind sẽ bỏ sót `src/`, sinh ra CSS
 gần như rỗng mà **không báo lỗi gì**. Đừng xoá dòng đó.

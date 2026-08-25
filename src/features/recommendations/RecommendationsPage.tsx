@@ -178,7 +178,7 @@ export function RecommendationsPage({
           <option value="RELIABILITY">{t("Độ tin cậy")}</option>
           <option value="MANAGEABILITY">{t("Vận hành")}</option>
         </Select>
-        <span className="text-[11px] text-[var(--ink-muted)]">
+        <span className="text-[12px] text-[var(--ink-muted)]">
           {t("{shown}/{total} gợi ý", { shown: rows.length, total: stats.total })}
         </span>
         <Button size="sm" variant="ghost" className="ml-auto" loading={q.isFetching} onClick={() => void q.refetch()}>
@@ -261,12 +261,12 @@ function RecCard({
         {alreadyMarked && (
           <Badge tone="neutral">{t("đã đánh dấu: {state}", { state: rec.state })}</Badge>
         )}
-        <span className="ml-auto text-[10px] text-[var(--ink-muted)]">{rec.location}</span>
+        <span className="ml-auto text-[11px] text-[var(--ink-muted)]">{rec.location}</span>
       </div>
 
-      <p className="selectable text-[13px] leading-relaxed">{rec.description}</p>
+      <p className="selectable text-[14px] leading-relaxed">{rec.description}</p>
 
-      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--ink-muted)]">
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--ink-muted)]">
         {rec.targetResource && (
           <span className="mono selectable" title={t("Tài nguyên bị ảnh hưởng")}>
             🎯 {rec.targetResource}
@@ -283,7 +283,7 @@ function RecCard({
 
       <div className="mt-2 flex items-center gap-2">
         {readOnly && (
-          <span className="text-[11px] text-[var(--ink-muted)]">
+          <span className="text-[12px] text-[var(--ink-muted)]">
             {t("Chế độ chỉ đọc — bật “Cho ghi” để đánh dấu trạng thái.")}
           </span>
         )}

@@ -8,6 +8,7 @@ import {
   Input,
   Notice,
   Select,
+  TableScroll,
   useToast,
 } from "../../../components/ui";
 import { useT, useTNode } from "../../../lib/i18n";
@@ -137,7 +138,7 @@ export function EnvTab({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {detail.summary.trafficPinned && (
         <Notice tone="warning" icon="📌">
           {t(
@@ -147,7 +148,7 @@ export function EnvTab({
       )}
 
       <div className="flex items-center gap-2">
-        <h2 className="text-[13px] font-semibold">
+        <h2 className="text-[14px] font-semibold">
           {t("Biến môi trường")}
           <span className="ml-1.5 font-normal text-[var(--ink-muted)]">
             {t("{total} biến · {secret} từ secret", {
@@ -208,9 +209,9 @@ export function EnvTab({
 
       <ErrorBox error={secrets.error} />
 
-      <div className="overflow-hidden rounded-lg border" style={{ background: "var(--surface-1)" }}>
-        <table className="w-full text-[12px]">
-          <thead style={{ background: "var(--surface-2)" }}>
+      <TableScroll fill>
+        <table className="w-full text-[13px]">
+          <thead className="sticky-head">
             <tr className="text-left">
               <th className="w-[30%] px-2 py-1.5 font-medium">{t("Tên")}</th>
               <th className="px-2 py-1.5 font-medium">{t("Giá trị")}</th>
@@ -306,9 +307,9 @@ export function EnvTab({
             })}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
 
-      <p className="text-[11px] leading-relaxed text-[var(--ink-muted)]">
+      <p className="text-[12px] leading-relaxed text-[var(--ink-muted)]">
         {t(
           "Biến đánh dấu 🔑 lấy giá trị từ Secret Manager. Giá trị của chúng không đi qua app này ở tab Env — muốn xem thì sang tab Secrets và bấm reveal.",
         )}{" "}

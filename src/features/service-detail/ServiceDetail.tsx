@@ -76,7 +76,7 @@ export function ServiceDetailPane({
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex shrink-0 items-start gap-3 border-b px-3 py-2">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-[15px] font-semibold">
+          <h1 className="flex items-center gap-2 text-[16px] font-semibold">
             <HealthDot health={s.health} message={s.healthMessage} />
             <span className="truncate">{s.name}</span>
             {s.trafficPinned && (
@@ -85,10 +85,10 @@ export function ServiceDetailPane({
               </Badge>
             )}
             {q.isFetching && (
-              <span className="text-[11px] text-[var(--ink-muted)]">{t("cập nhật…")}</span>
+              <span className="text-[12px] text-[var(--ink-muted)]">{t("cập nhật…")}</span>
             )}
           </h1>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--ink-muted)]">
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--ink-muted)]">
             <span>{regionLabel(s.region)}</span>
             <span>·</span>
             <span className="mono">{s.latestReadyRevision ?? t("chưa có revision ready")}</span>
@@ -137,7 +137,7 @@ export function ServiceDetailPane({
             id: "env",
             label: "Env",
             badge: (
-              <span className="tnum text-[10px] text-[var(--ink-muted)]">
+              <span className="tnum text-[11px] text-[var(--ink-muted)]">
                 {s.envCount}
                 {s.secretEnvCount > 0 && ` · 🔑${s.secretEnvCount}`}
               </span>
@@ -151,7 +151,13 @@ export function ServiceDetailPane({
         ]}
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      {/*
+        Pane KHÔNG tự cuộn: mỗi tab tự lo phần cuộn của mình. Nếu pane cuộn thì bảng bên
+        trong không thể cao tới đáy cửa sổ — chiều cao của nó do nội dung quyết định, không
+        do khung nhìn. Tab nào là nội dung dài (Tổng quan, Scaling, Secrets, Tải) tự đặt
+        `overflow-y-auto` trên gốc của nó.
+      */}
+      <div className="flex min-h-0 flex-1 flex-col p-3">
         {tab === "overview" && (
           <OverviewTab project={project} detail={d} load={load} containerIndex={containerIndex} />
         )}

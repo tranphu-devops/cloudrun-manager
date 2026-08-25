@@ -51,8 +51,8 @@ export function UnlockScreen({
           <div className="text-2xl" aria-hidden>
             🔐
           </div>
-          <h1 className="mt-2 text-[16px] font-semibold">{t("Mở khoá credential")}</h1>
-          <p className="mt-1 text-[12px] text-[var(--ink-muted)]">
+          <h1 className="mt-2 text-[17px] font-semibold">{t("Mở khoá credential")}</h1>
+          <p className="mt-1 text-[13px] text-[var(--ink-muted)]">
             {t(
               "Đã có {count} service account được lưu mã hoá trên máy này. Nhập passphrase để dùng cho phiên làm việc.",
               { count: status.credentialCount },
@@ -61,7 +61,7 @@ export function UnlockScreen({
         </div>
 
         {status.active && (
-          <div className="mb-3 rounded-md border p-2.5 text-[12px]" style={{ background: "var(--surface-2)" }}>
+          <div className="mb-3 rounded-md border p-2.5 text-[13px]" style={{ background: "var(--surface-2)" }}>
             <div className="text-[var(--ink-muted)]">{t("Service account đang chọn")}</div>
             <div className="mono selectable mt-0.5 break-all">{status.active.clientEmail}</div>
           </div>
@@ -92,12 +92,12 @@ export function UnlockScreen({
         <div className="mt-4 border-t pt-3 text-center">
           <button
             type="button"
-            className="text-[12px] text-[var(--ink-secondary)] underline hover:text-[var(--ink-primary)]"
+            className="text-[13px] text-[var(--ink-secondary)] underline hover:text-[var(--ink-primary)]"
             onClick={onUseGcloud}
           >
             {t("Bỏ qua — dùng gcloud CLI như cũ")}
           </button>
-          <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
+          <p className="mt-1 text-[12px] text-[var(--ink-muted)]">
             {t("App sẽ xác thực bằng tài khoản gcloud của máy, không đụng tới vault.")}
           </p>
         </div>

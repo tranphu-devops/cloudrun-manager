@@ -17,6 +17,8 @@ export const EN: Dictionary = {
   " · đang hiển thị {n} dòng": " · showing {n} lines",
   " · dữ liệu {ago}": " · data {ago}",
   "— không có lịch": "— no schedule",
+  "↑ Cũ nhất trước": "↑ Oldest first",
+  "↓ Mới nhất trước": "↓ Newest first",
   "…": "…",
   "“CPU luôn được cấp” tính tiền CPU cho toàn bộ thời gian instance tồn tại, không chỉ lúc xử lý request. Chỉ cần bật khi app có việc chạy nền ngoài request (worker, cron trong process).":
     "“CPU always allocated” bills CPU for the whole lifetime of the instance, not only while it handles requests. Turn it on only if the app does background work outside requests (workers, in-process cron).",
@@ -237,6 +239,7 @@ export const EN: Dictionary = {
   "Điều hướng": "Navigation",
   "{vars} do Cloud Run tự quản, không đặt tay được.":
     "{vars} are managed by Cloud Run and cannot be set by hand.",
+  "Đảo chiều hiển thị log": "Reverse the log order",
   "Độ tin cậy": "Reliability",
   "Độ tươi của dữ liệu đang hiển thị": "How fresh the displayed data is",
   "Đối chiếu với metricDescriptors": "Verify against metricDescriptors",
@@ -257,6 +260,7 @@ export const EN: Dictionary = {
   "Gắn nhãn môi trường": "Set environment label",
   "Gắn nhãn…": "Label…",
   ghim: "pinned",
+  "Giao diện": "Theme",
   "Giá trị": "Value",
   "Giữ tối đa {max} dòng trong bộ nhớ · bấm một dòng để xem JSON gốc":
     "Keeping at most {max} lines in memory · click a line for the raw JSON",
@@ -360,6 +364,7 @@ export const EN: Dictionary = {
     "Open Log Explorer with the service/region filter already set",
   "Mở URL ↗": "Open URL ↗",
   "mỗi điểm = {align}": "each point = {align}",
+  "Monokai dim": "Monokai dim",
   "Mọi mức độ": "All severities",
   "Mọi revision": "All revisions",
   "mỗi tháng, theo GCP": "per month, per GCP",
@@ -419,6 +424,7 @@ export const EN: Dictionary = {
   RPS: "RPS",
   "Sắp xếp: chi phí ước lượng": "Sort: estimated cost",
   "Sắp xếp: lần chạy gần nhất": "Sort: most recent run",
+  "Sáng": "Light",
   "Sắp xếp: mức độ vấn đề": "Sort: issue severity",
   "Sắp xếp: RPS": "Sort: RPS",
   "Sắp xếp: số instance": "Sort: instance count",
@@ -479,6 +485,7 @@ export const EN: Dictionary = {
   "Tất cả project": "All projects",
   "Tên": "Name",
   "TÊN_BIẾN": "VARIABLE_NAME",
+  "Tối": "Dark",
   "Thao tác ghi trên project này sẽ luôn cần gõ tên service.":
     "Writes on this project will always require typing the service name.",
   "Thao tác này tạo một revision mới": "This creates a new revision",
@@ -526,6 +533,7 @@ export const EN: Dictionary = {
   "Traffic đang được ghim vào revision cụ thể thay vì LATEST. Mọi revision mới tạo ra (kể cả khi bạn sửa env) sẽ không nhận traffic cho tới khi traffic được chuyển sang.":
     "Traffic is pinned to a specific revision instead of LATEST. Any new revision (including ones you create by editing env) receives no traffic until traffic is shifted to it.",
   "traffic ghim": "traffic pinned",
+  "Traffic ghim": "Traffic pinned",
   "Traffic ghim — revision mới không nhận traffic":
     "Traffic pinned — new revisions receive none",
   "Traffic ghim vào revision cụ thể": "Traffic pinned to a specific revision",

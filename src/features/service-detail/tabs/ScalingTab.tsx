@@ -137,7 +137,7 @@ export function ScalingTab({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       {minNum > 0 && (
         <Notice tone="info" icon="💰">
           {t(
@@ -196,7 +196,7 @@ export function ScalingTab({
             </Field>
           </div>
           {localInvalid && (
-            <p className="mt-2 text-[11px]" style={{ color: "var(--status-critical)" }}>
+            <p className="mt-2 text-[12px]" style={{ color: "var(--status-critical)" }}>
               {t("Min phải ≥ 0, max phải ≥ 1, và min không được lớn hơn max.")}
             </p>
           )}
@@ -225,7 +225,7 @@ export function ScalingTab({
           </div>
 
           <div className="mt-3 flex flex-col gap-2">
-            <label className="flex items-start gap-2 text-[12px]">
+            <label className="flex items-start gap-2 text-[13px]">
               <input
                 type="checkbox"
                 className="mt-0.5"
@@ -234,12 +234,12 @@ export function ScalingTab({
               />
               <span>
                 {t("CPU luôn được cấp")}
-                <span className="block text-[11px] text-[var(--ink-muted)]">
+                <span className="block text-[12px] text-[var(--ink-muted)]">
                   {t("Mặc định Cloud Run chỉ cấp CPU khi đang xử lý request.")}
                 </span>
               </span>
             </label>
-            <label className="flex items-start gap-2 text-[12px]">
+            <label className="flex items-start gap-2 text-[13px]">
               <input
                 type="checkbox"
                 className="mt-0.5"
@@ -248,14 +248,14 @@ export function ScalingTab({
               />
               <span>
                 {t("Startup CPU boost")}
-                <span className="block text-[11px] text-[var(--ink-muted)]">
+                <span className="block text-[12px] text-[var(--ink-muted)]">
                   {t("Tăng CPU trong lúc khởi động để giảm cold start.")}
                 </span>
               </span>
             </label>
           </div>
 
-          <p className="mt-3 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-3 text-[12px] leading-relaxed text-[var(--ink-muted)]">
             {t(
               "Cloud Run có ràng buộc giữa CPU và memory (ví dụ CPU ≥ 4 cần memory ≥ 2Gi). App không đoán trước các ràng buộc này — bấm “Kiểm tra trước” để Cloud Run tự xác nhận mà không tạo revision.",
             )}

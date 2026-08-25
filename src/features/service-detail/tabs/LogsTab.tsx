@@ -1,7 +1,16 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
-import { Badge, Button, ErrorBox, Input, Loading, Select, Toggle } from "../../../components/ui";
+import {
+  Badge,
+  Button,
+  ErrorBox,
+  Input,
+  Loading,
+  Select,
+  TableScroll,
+  Toggle,
+} from "../../../components/ui";
 import { cn, dateTime, ms, num, SEVERITY_ORDER } from "../../../lib/format";
 import { useT } from "../../../lib/i18n";
 import { api, asCmdError } from "../../../lib/ipc";
@@ -50,6 +59,9 @@ export function LogsTab({
   const [loading, setLoading] = useState(false);
   const [live, setLive] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  // Chiều hiển thị. `entries` LUÔN giữ thứ tự mới→cũ vì `mergeDedupe` và `newestRef` dựa
+  // vào phần tử [0] là dòng mới nhất; đảo chiều chỉ là chuyện của lúc render.
+  const [oldestFirst, setOldestFirst] = useState(false);
 
   const [severity, setSeverity] = useState("DEFAULT");
   const [stream, setStream] = useState("all");
@@ -114,6 +126,14 @@ export function LogsTab({
     const id = window.setInterval(() => void load("tail"), Math.max(pollSeconds, 2) * 1000);
     return () => window.clearInterval(id);
   }, [live, pollSeconds, load]);
+
+  const moreButton = nextToken ? (
+    <div className="flex justify-center p-2">
+      <Button size="sm" loading={loading} onClick={() => void load("more")}>
+        {t("Tải thêm")}
+      </Button>
+    </div>
+  ) : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -181,6 +201,15 @@ export function LogsTab({
         </form>
 
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setOldestFirst((v) => !v)}
+            title={t("Đảo chiều hiển thị log")}
+            aria-pressed={oldestFirst}
+          >
+            {oldestFirst ? t("↑ Cũ nhất trước") : t("↓ Mới nhất trước")}
+          </Button>
           <Toggle
             checked={live}
             onChange={setLive}
@@ -208,20 +237,21 @@ export function LogsTab({
 
       <ErrorBox error={error} onRetry={() => void load("replace")} />
 
-      <div
-        className="min-h-0 flex-1 overflow-auto rounded-lg border"
-        style={{ background: "var(--surface-1)" }}
-      >
+      <TableScroll fill>
         {loading && entries.length === 0 && <Loading label={t("Đang lấy log…")} />}
         {!loading && entries.length === 0 && !error && (
-          <p className="p-4 text-center text-[12px] text-[var(--ink-muted)]">
+          <p className="p-4 text-center text-[13px] text-[var(--ink-muted)]">
             {t("Không có log nào khớp trong khoảng thời gian này.")}
           </p>
         )}
 
-        <table className="w-full text-[11px]">
+        {/* Trang tiếp theo là log CŨ hơn, nên khi hiển thị cũ→mới nó nối vào đầu danh sách
+            — nút phải nằm ở đầu bảng, đặt ở cuối sẽ chỉ vào nhầm chỗ. */}
+        {oldestFirst && moreButton}
+
+        <table className="w-full text-[12px]">
           <tbody>
-            {entries.map((e) => {
+            {(oldestFirst ? [...entries].reverse() : entries).map((e) => {
               const tone = SEVERITY_TONE[e.severity] ?? SEVERITY_TONE["INFO"]!;
               const isOpen = expanded === e.insertId;
               const bad = e.httpStatus !== null && e.httpStatus >= 500;
@@ -284,16 +314,10 @@ export function LogsTab({
           </tbody>
         </table>
 
-        {nextToken && (
-          <div className="flex justify-center p-2">
-            <Button size="sm" loading={loading} onClick={() => void load("more")}>
-              {t("Tải thêm")}
-            </Button>
-          </div>
-        )}
-      </div>
+        {!oldestFirst && moreButton}
+      </TableScroll>
 
-      <p className="text-[10px] text-[var(--ink-muted)]">
+      <p className="text-[11px] text-[var(--ink-muted)]">
         {t("Giữ tối đa {max} dòng trong bộ nhớ · bấm một dòng để xem JSON gốc", {
           max: num(MAX_LINES),
         })}

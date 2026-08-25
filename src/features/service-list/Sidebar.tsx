@@ -18,7 +18,7 @@ export function HealthDot({ health, message }: { health: Health; message?: strin
     <span
       aria-label={m.text}
       title={message ? `${m.text} — ${message}` : m.text}
-      className="shrink-0 text-[10px] leading-none"
+      className="shrink-0 text-[11px] leading-none"
       style={{ color: m.color }}
     >
       {m.icon}
@@ -88,7 +88,7 @@ export function Sidebar({
           placeholder={t("Tìm trong {count} service…", { count: services.length })}
           aria-label={t("Tìm service")}
         />
-        <label className="flex items-center gap-1.5 text-[11px] text-[var(--ink-secondary)]">
+        <label className="flex items-center gap-1.5 text-[12px] text-[var(--ink-secondary)]">
           <input
             type="checkbox"
             checked={onlyProblems}
@@ -111,13 +111,13 @@ export function Sidebar({
           </div>
         )}
         {!loading && services.length > 0 && groups.length === 0 && (
-          <p className="p-3 text-[12px] text-[var(--ink-muted)]">{t("Không có service nào khớp.")}</p>
+          <p className="p-3 text-[13px] text-[var(--ink-muted)]">{t("Không có service nào khớp.")}</p>
         )}
 
         {groups.map(([region, items]) => (
           <div key={region}>
             <h3
-              className="sticky top-0 z-10 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--ink-muted)]"
+              className="sticky top-0 z-10 border-b px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-muted)]"
               style={{ background: "var(--surface-2)" }}
             >
               {regionLabel(region)} · {items.length}
@@ -148,13 +148,13 @@ export function Sidebar({
                     >
                       <span className="flex min-w-0 items-center gap-1.5">
                         <HealthDot health={s.health} message={s.healthMessage} />
-                        <span className="min-w-0 flex-1 truncate text-[12px]">{s.name}</span>
+                        <span className="min-w-0 flex-1 truncate text-[13px]">{s.name}</span>
                         {s.trafficPinned && (
                           <span
                             title={t(
                               "Traffic bị ghim vào revision cụ thể — revision mới sẽ không nhận traffic",
                             )}
-                            className="shrink-0 text-[10px]"
+                            className="shrink-0 text-[11px]"
                             style={{ color: "var(--status-warning)" }}
                           >
                             📌
@@ -162,7 +162,7 @@ export function Sidebar({
                         )}
                         {s.secretEnvCount > 0 && (
                           <span
-                            className="shrink-0 text-[10px] opacity-60"
+                            className="shrink-0 text-[11px] opacity-60"
                             title={t("{count} biến lấy từ Secret Manager", {
                               count: s.secretEnvCount,
                             })}
@@ -172,7 +172,7 @@ export function Sidebar({
                         )}
                       </span>
 
-                      <span className="tnum flex items-center gap-2 pl-[15px] text-[10px] text-[var(--ink-muted)]">
+                      <span className="tnum flex items-center gap-2 pl-[15px] text-[11px] text-[var(--ink-muted)]">
                         {/* `undefined` = chưa có dữ liệu metric. Hiện "–" thay vì 0 để
                             không ai đọc thành "service không chạy instance nào". */}
                         <span title={t("Số instance")}>
@@ -201,7 +201,7 @@ export function Sidebar({
       </div>
 
       {load && load.missing.length > 0 && (
-        <div className="border-t px-2 py-1.5 text-[10px] text-[var(--ink-muted)]">
+        <div className="border-t px-2 py-1.5 text-[11px] text-[var(--ink-muted)]">
           {t("Không lấy được: {list} — badge tương ứng hiện “–”.", {
             list: load.missing.join(", "),
           })}

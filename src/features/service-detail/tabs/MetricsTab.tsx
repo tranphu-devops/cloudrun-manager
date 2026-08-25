@@ -40,7 +40,7 @@ export function MetricsTab({
         : `${align}s`;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       {/* Filter đứng một hàng ngay trên chart, không rải rác. */}
       <div className="flex items-center gap-2">
         <Select
@@ -54,7 +54,7 @@ export function MetricsTab({
             </option>
           ))}
         </Select>
-        <span className="text-[11px] text-[var(--ink-muted)]">
+        <span className="text-[12px] text-[var(--ink-muted)]">
           {t("mỗi điểm = {align}", { align: alignLabel })}
           {q.isFetching && t(" · đang cập nhật…")}
         </span>
